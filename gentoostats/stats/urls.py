@@ -1,6 +1,8 @@
 from django.conf.urls import patterns, include, url
 
 urlpatterns = patterns('gentoostats.stats.views',
-    url(r'^host/(?P<host_id>\w+)/$', 'hostdetails',  name='hostdetails'),
-    url(r'^$',                       'overallstats', name='overallstats'),
+    # TODO: this needs updating.
+
+    url(r'^host/(?P<id>\w+)/$', 'host_details',  name='host_details_url'),
+    url(r'^$',                  'overall_stats', name='overall_stats_url'),
 )

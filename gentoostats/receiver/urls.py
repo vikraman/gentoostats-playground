@@ -5,5 +5,7 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('gentoostats.receiver.views',
-    url(r'^', 'receive', name='receive'),
+    # NOTE: APPEND_SLASH's redirect may lead to loss of POST data.
+
+    url(r'^/?$', 'process_submission', name='upload_url'),
 )
