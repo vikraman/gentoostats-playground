@@ -26,7 +26,7 @@ class FileExistsException(Exception): pass
 class SimpleHttpRequest(object):
     def __init__(self, request):
         self.body = request.body
-        self.META = filter(lambda x: type(x[1]) == str, request.META.items())
+        self.META = filter(lambda x: isinstance(x[1], basestring), request.META.items())
 
 def save_request(request):
     ip_addr = request.META['REMOTE_ADDR']
