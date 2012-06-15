@@ -6,12 +6,14 @@ import random
 import logging
 from datetime import datetime
 
-from portage.dep import Atom
+from portage.dep import Atom as PortageAtom
+from portage.exception import InvalidAtom
+from portage._sets import SETPREFIX
 
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
-from django.db import transaction
 
 from gentoostats.stats.models import *
 
@@ -21,12 +23,15 @@ PROJECT_DIR = os.path.dirname(__file__)
 CURRENT_PROTOCOL_VERSION = 2
 
 class FileExistsException(Exception): pass
+class BadRequestException(Exception): pass
 
 # This should be defined at the module level:
 class SimpleHttpRequest(object):
     def __init__(self, request):
         self.body = request.body
-        self.META = filter(lambda x: isinstance(x[1], basestring), request.META.items())
+        self.META = filter( lambda x: isinstance(x[1], basestring)
+                          , request.META.items()
+        )
 
 def save_request(request):
     ip_addr = request.META['REMOTE_ADDR']
@@ -52,126 +57,331 @@ def save_request(request):
     with open(file_path, 'wb') as f:
         pickle.dump(request_copy, f)
 
-# @transaction.commit_on_success
-@csrf_exempt
-def process_submission(request):
-    if request.method != 'POST':
-        logger.info("process_submission(): Invalid method use attempt.")
-        return HttpResponseBadRequest("Error: You are not using POST.")
+def validate_item(item):
+    # TODO: also log information such as type(item).
 
+    try:
+        item.full_clean()
+    except ValidationError as e:
+        error_message = "Error: '%s' failed validation." % str(item)
+        logger.info("validate_item(): " + error_message, exc_info=True)
+        raise BadRequestException(error_message)
+
+@csrf_exempt
+@transaction.commit_on_success
+def process_submission(request):
     # Before continuing let's save the whole request (for debugging):
     try:
         save_request(request)
     except FileExistsException as e:
-        return HttpResponseBadRequest(
-            "Error: You are sending too many requests."
-        )
-    except:
-        raise
+        raise BadRequestException("Error: Unable to save your request.")
 
     # Parse the request:
     try:
         data = json.loads(request.body)
     except Exception as e:
-        logger.warning("process_submission(): Failed parsing JSON.", exc_info=True)
-        return HttpResponseBadRequest("Error: Malformed JSON data.")
+        error_message = "Error: Unable to parse JSON data."
+        logger.warning("process_submission(): " + error_message, exc_info=True)
+        raise BadRequestException(error_message)
 
     # Check for AUTH data:
     try:
         uuid       = data['AUTH']['UUID']
         upload_key = data['AUTH']['PASSWD']
-    except Exception as e:
-        logger.info("process_submission(): No AUTH data.", exc_info=True)
-        return HttpResponseBadRequest("Error: AUTH data is missing.")
+    except KeyError as e:
+        error_message = "Error: Incomplete AUTH data."
+        logger.info("process_submission(): " + error_message, exc_info=True)
+        raise BadRequestException(error_message)
 
     try:
         protocol = data['PROTOCOL']
-    except Exception as e:
-        logger.info("process_submission(): Error parsing protocol.", exc_info=True)
-        return HttpResponseBadRequest("Error: Unable to parse PROTOCOL.")
+        assert type(protocol) == int
+    except KeyError as e:
+        error_message = "Error: No protocol specified."
+        logger.info("process_submission(): " + error_message, exc_info=True)
+        raise BadRequestException(error_message)
+    except AssertionError as e:
+        error_message = "Error: PROTOCOL must be an integer."
+        logger.info("process_submission(): " + error_message, exc_info=True)
+        raise BadRequestException(error_message)
 
     if protocol != CURRENT_PROTOCOL_VERSION:
         logger.info(
-            "process_submission(): Unsupported protocol: %s" % (protocol),
+            "process_submission(): Unsupported protocol: %s." % (protocol),
             exc_info=True
         )
 
-        return HttpResponseBadRequest(
-            "Error: Unsupported protocol. Please update your client."
+        raise BadRequestException(
+            "Error: Unsupported protocol " + \
+            "(only version %d is supported). " % CURRENT_PROTOCOL_VERSION + \
+            "Please update your client."
         )
 
+    lastsync = data.get('LASTSYNC')
+    if lastsync:
+        try:
+            # FIXME: time zone offset
+            lastsync = datetime.fromtimestamp(time.mktime(
+                time.strptime(lastsync, "%a, %d %b %Y %H:%M:%S +0000")
+            ))
+        except ValueError as e:
+            error_message = "Error: Invalid date in LASTSYNC."
+            logger.info("process_submission(): " + error_message, exc_info=True)
+            raise BadRequestException(error_message)
 
-    host = Host(id=uuid, upload_key=upload_key)
     try:
-        host.clean_fields()
-    except:
-        logger.info("process_submission(): Invalid AUTH values.", exc_info=True)
-        return HttpResponseBadRequest("Error: Invalid AUTH values.")
+        host, _ = Host.objects.get_or_create(id=uuid, upload_key=upload_key)
+        host.full_clean()
+    except IntegrityError as e:
+        error_message = "Error: Invalid password."
+        logger.info("process_submission(): " + error_message, exc_info=True)
+        raise BadRequestException(error_message)
+    except ValidationError as e:
+        error_message = "Error: Invalid AUTH values."
+        logger.info("process_submission(): " + error_message, exc_info=True)
+        raise BadRequestException(error_message + " Is your password too long?")
 
-    with transaction.commit_manually():
-        try:
-            # This is going to error out if the upload_key is different.
-            host, created = Host.objects.get_or_create(id=uuid, upload_key=upload_key)
-        except IntegrityError as e:
-            logger.info("process_submission(): Invalid password.", exc_info=True)
-            return HttpResponseBadRequest("Error: invalid password.")
+    # AFAIK using bulk_create here is not worth it.
 
-        try:
-            lastsync = data.get('LASTSYNC', None)
-            if lastsync:
-                lastsync = datetime.fromtimestamp(time.mktime(
-                    time.strptime(lastsync, "%a, %d %b %Y %H:%M:%S +0000")
-                ))
+    features = data.get('FEATURES')
+    if features:
+        features = [
+            Feature.objects.get_or_create(name=f)[0] for f in features
+        ]
 
-            submission = Submission.objects.create(
-                host     = host,
-                email    = data['AUTH'].get('EMAIL', ''),
-                ip_addr  = request.META['REMOTE_ADDR'],
-                fwd_addr = request.META.get('REMOTE_ADDR', None),
+        map(validate_item, features)
 
-                protocol = int(data['PROTOCOL']),
+    useflags = data.get('USE')
+    if useflags:
+        useflags = [
+            UseFlag.objects.get_or_create(name=u)[0] for u in useflags
+        ]
 
-                arch     = data.get('REMOTE_ADDR', ''),
-                chost    = data.get('CHOST',       ''),
-                cbuild   = data.get('CBUILD',      ''),
-                ctarget  = data.get('CTARGET',     ''),
+        map(validate_item, useflags)
 
-                platform = data.get('PLATFORM',    ''),
-                profile  = data.get('PROFILE',     ''),
-                # lang     = TODO
-                lastsync = lastsync,
-                makeconf = data.get('MAKECONF',    ''),
+    keywords = data.get('ACCEPT_KEYWORDS')
+    if keywords:
+        keywords = [
+            Keyword.objects.get_or_create(name=k)[0] for k in keywords
+        ]
 
-                cflags   = data.get('CFLAGS',      ''),
-                cxxflags = data.get('CXXFLAGS',    ''),
-                ldflags  = data.get('LDFLAGS',     ''),
-                cppflags = data.get('CPPFLAGS',    ''),
-                fflags   = data.get('FFLAGS',      ''),
+        map(validate_item, keywords)
 
-                # features = TODO
-                # sync     = TODO
-                # mirrors  = TODO
+    mirrors = data.get('GENTOO_MIRRORS')
+    if mirrors:
+        mirrors = [
+            MirrorServer.objects.get_or_create(url=m)[0] for m in mirrors
+        ]
 
-                # global_use      = TODO
-                # global_keywords = TODO
+        map(validate_item, mirrors)
 
-                # installed_packages = TODO
-                # selected_atoms     = TODO
+    lang = data.get('LANG')
+    if lang:
+        lang, _ = Lang.objects.get_or_create(name=lang)
+        validate_item(lang)
 
-                # makeopts      = TODO
-                # emergeopts    = TODO
-                # syncopts      = TODO
-                # acceptlicense = TODO
+    sync = data.get('SYNC')
+    if sync:
+        sync, _ = SyncServer.objects.get_or_create(url=sync)
+        validate_item(sync)
+
+    submission = Submission.objects.create(
+        host          = host,
+        email         = data['AUTH'].get('EMAIL'),
+        ip_addr       = request.META['REMOTE_ADDR'],
+        fwd_addr      = request.META.get('REMOTE_ADDR'),
+
+        protocol      = protocol,
+
+        arch          = data.get('REMOTE_ADDR'),
+        chost         = data.get('CHOST'),
+        cbuild        = data.get('CBUILD'),
+        ctarget       = data.get('CTARGET'),
+
+        platform      = data.get('PLATFORM'),
+        profile       = data.get('PROFILE'),
+        makeconf      = data.get('MAKECONF'),
+
+        cflags        = data.get('CFLAGS'),
+        cxxflags      = data.get('CXXFLAGS'),
+        ldflags       = data.get('LDFLAGS'),
+        cppflags      = data.get('CPPFLAGS'),
+        fflags        = data.get('FFLAGS'),
+
+        makeopts      = data.get('MAKEOPTS'),
+        emergeopts    = data.get('EMERGE_DEFAULT_OPTS'),
+        syncopts      = data.get('PORTAGE_RSYNC_EXTRA_OPTS'),
+        acceptlicense = data.get('ACCEPT_LICENSE'),
+
+        lang          = lang,
+        sync          = sync,
+
+        lastsync      = lastsync,
+    )
+
+    submission.features.add(*features)
+    submission.mirrors.add(*mirrors)
+
+    submission.global_use.add(*useflags)
+    submission.global_keywords.add(*keywords)
+
+    packages = data.get('PACKAGES')
+    if packages:
+        for package, info in packages.items():
+            try:
+                atom = PortageAtom( "=" + package
+                                  , allow_wildcard = False
+                                  , allow_repo     = True
+                )
+                assert atom.blocker == False and atom.operator == '='
+
+                category, package_name = atom.cp.split('/')
+
+                category, _ = Category.objects.get_or_create(name=category)
+                category.full_clean()
+
+                package_name, _ = PackageName.objects.get_or_create(name=package_name)
+                package_name.full_clean()
+
+                package, _ = Package.objects.get_or_create(
+                    category     = category,
+                    package_name = package_name,
+
+                    version      = atom.cpv.lstrip(atom.cp),
+                    slot         = atom.slot,
+                    repository   = atom.repo,
+                )
+                package.full_clean()
+
+            except (InvalidAtom, ValidationError) as e:
+                error_message = "Error: Atom '%s' failed validation." % package
+                logger.info("process_submission(): " + error_message, exc_info=True)
+                raise BadRequestException(error_message)
+
+            keyword = info.get('KEYWORD')
+            if keyword:
+                keyword, _ = Keyword.objects.get_or_create(name=keyword)
+                keyword.full_clean()
+
+            built_at = info.get('BUILD_TIME')
+            if built_at:
+                built_at = datetime.fromtimestamp(float(built_at))
+
+            installation = Installation.objects.create(
+                package    = package,
+                submission = submission,
+                keyword    = keyword,
+
+                built_at       = built_at,
+                build_duration = info.get('BUILD_DURATION'), # TODO
+                size           = info.get('SIZE'),
             )
 
-            transaction.commit()
-            return HttpResponse("Success")
+            useflags = info.get('USE')
+            if useflags:
+                def _get_useflag_objects(useflag_list):
+                    if not useflag_list:
+                        return useflag_list
 
-        except Exception as e:
-            transaction.rollback()
+                    useflag_list = [
+                        UseFlag.objects.get_or_create(name=u)[0] \
+                        for u in useflag_list
+                    ]
 
-            logger.error("process_submission(): Pre-transaction failure.", exc_info=True)
-            return HttpResponseBadRequest("Error: something went wrong.")
-        else:
-            # This never actually gets executed.
-            transaction.commit()
+                    map(validate_item, useflag_list)
+
+                    return useflag_list
+
+                useplus  = _get_useflag_objects(useflags.get('PLUS'))
+                useminus = _get_useflag_objects(useflags.get('MINUS'))
+                useunset = _get_useflag_objects(useflags.get('UNSET'))
+
+                if useplus:
+                    installation.useplus.add(*useplus)
+                if useminus:
+                    installation.useminus.add(*useminus)
+                if useunset:
+                    installation.useunset.add(*useunset)
+
+    selected_sets = data.get('SELECTEDSETS')
+    if selected_sets:
+        for set_name, entries in selected_sets.items():
+            try:
+                atom_set, _ = AtomSet.objects.get_or_create(
+                    name  = set_name,
+                    owner = submission,
+                )
+
+                for entry in entries:
+                    try:
+                        if entry.startswith(SETPREFIX):
+                            subset_name = entry[len(SETPREFIX):]
+
+                            subset, _ = AtomSet.objects.get_or_create(
+                                name  = subset_name,
+                                owner = submission,
+                            )
+                            subset.full_clean()
+
+                            atom_set.subsets.add(subset)
+                        else:
+                            patom = PortageAtom( entry
+                                               , allow_wildcard = False
+                                               , allow_repo     = True
+                            )
+
+                            category, package_name = patom.cp.split('/')
+
+                            category, _ = Category.objects.get_or_create(name=category)
+                            category.full_clean()
+
+                            package_name, _ = PackageName.objects.get_or_create(name=package_name)
+                            package_name.full_clean()
+
+                            atom, _ = Atom.objects.get_or_create(
+                                full_atom    = entry,
+                                operator     = patom.operator or '',
+
+                                category     = category,
+                                package_name = package_name,
+                                version      = patom.cpv.lstrip(patom.cp),
+                                slot         = patom.slot,
+                                repository   = patom.repo,
+                            )
+
+                            atom.full_clean()
+                            atom_set.atoms.add(atom)
+                    except (InvalidAtom, ValidationError) as e:
+                        error_message = "Error: Atom/set '%s' failed validation." % entry
+                        logger.info("process_submission(): " + error_message, exc_info=True)
+                        raise BadRequestException(error_message)
+
+                atom_set.full_clean()
+            except ValidationError as e:
+                error_message = \
+                        "Error: Selected set '%s' failed validation." \
+                        % selectedset
+
+                logger.info("process_submission(): " + error_message, exc_info=True)
+                raise BadRequestException(error_message)
+
+    submission.full_clean()
+    # transaction.commit()
+    return HttpResponse("Success")
+
+@csrf_exempt
+def accept_submission(request):
+    if request.method != 'POST':
+        logger.info("process_submission(): Invalid method use attempt.")
+        return HttpResponseBadRequest("Error: You are not using POST.")
+
+    try:
+        return process_submission(request)
+    except BadRequestException as e:
+        return HttpResponseBadRequest(str(e))
+    except Exception as e:
+        logger.error("process_submission(): " + str(e), exc_info=True)
+        return HttpResponseBadRequest(
+            "Error: something went wrong. The administrator has been " + \
+            "notified and will look into the problem."
+        )

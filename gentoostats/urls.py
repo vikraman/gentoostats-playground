@@ -8,8 +8,8 @@ urlpatterns = patterns('',
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/',     include(admin.site.urls)),
 
-    url(r'^upload/',    include('gentoostats.receiver.urls')),
-    url(r'^stats/',     include('gentoostats.stats.urls')),
+    url(r'^upload',     include('gentoostats.receiver.urls')),
+    url(r'^stats',      include('gentoostats.stats.urls')),
     url(r'^',           include('gentoostats.main.urls')),
 
     # TODO:

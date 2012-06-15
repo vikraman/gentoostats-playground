@@ -1,7 +1,9 @@
-from django.db import models
+from django.db import IntegrityError, models
 from django.core.validators import RegexValidator, URLValidator, validate_email
+from django.core.exceptions import ValidationError
 
-from portage.dep import Atom
+from portage.dep import Atom as PortageAtom
+from portage.exception import InvalidAtom
 
 # I have tried being consistent with the names defined here:
 # http://devmanual.gentoo.org/ebuild-writing/variables/index.html
@@ -60,87 +62,114 @@ class Repository(models.Model):
         return self.name
 
 version_validator  = RegexValidator('^\S+$')
-revision_validator = RegexValidator('^r\d+$')
 slot_validator     = RegexValidator('^\S+$')
 
 def atom_validator(atom):
     try:
-        Atom(atom)
+        PortageAtom(atom)
     except InvalidAtom:
         raise ValidationError('%s is not a valid atom' % (atom))
     except:
-        # Is there a better way to handle this?
-        raise
+        raise ValidationError('Something went wrong when validating %s.' % (atom))
 
-class Package(models.Model):
+class AtomABC(models.Model):
     """
-    (category, package_name, version, revision, slot, repo)
+    Abstract base class for atoms.
 
-    Slotting info: http://devmanual.gentoo.org/general-concepts/slotting/index.html
+    Consists of:
+      operator                         (optional)  (not defined here)
+      category                         (mandatory)
+      package name                     (mandatory)
+      version (plus optional revision) (optional)  (not defined here)
+      slot                             (optional)
+      repository                       (optional)
+
+    For more Slotting info, please see
+    http://devmanual.gentoo.org/general-concepts/slotting/index.html
+
+    Consult ebuild(5) if in doubt.
     """
 
     category     = models.ForeignKey(Category, related_name='+')
     package_name = models.ForeignKey(PackageName, related_name='+')
+    slot         = models.CharField(max_length=32, blank=True, null=True, validators=[slot_validator])
+    repository   = models.ForeignKey(Repository, blank=True, null=True, related_name='+')
 
-    version      = models.CharField(max_length=16, validators=[version_validator])
-    revision     = models.CharField(max_length=16, blank=True, validators=[revision_validator])
-    slot         = models.CharField(max_length=32, blank=True, validators=[slot_validator])
-    repository   = models.ForeignKey(Repository, related_name='+')
+    class Meta:
+        abstract = True
+
+# TODO: remove the blank=True things when the client is patched.
+class Package(AtomABC):
+    """
+    Like AtomABC, but with a mandatory version.
+
+    Note that you can't override parent fields in Django.
+    """
+
+    # version also holds the revision specified (if there's any)
+    version = models.CharField(max_length=32, validators=[version_validator])
 
     class Meta:
         unique_together = ( 'category'
                           , 'package_name'
                           , 'version'
-                          , 'revision'
                           , 'slot'
                           , 'repository'
         )
 
-    def __unicode__(self):
-        revision   = "-%s" % (self.revision) if self.revision else ''
-        slot       = ":%s" % (self.slot) if self.slot else ''
-        repository = "::%s" % (self.repository) if self.repo != DEFAULT_REPO_NAME else ''
+    @models.permalink
+    def get_absolute_url(self):
+        # TODO
+        return ('package_details_url', (), {'id': self.id})
 
-        return "%s/%s-%s%s%s%s" % ( self.category
-                                  , self.package_name
-                                  , self.version
-                                  , revision
-                                  , slot
-                                  , repository
+    def __unicode__(self):
+        slot       = ":%s"  % (self.slot)       if self.slot                            else ''
+        repository = "::%s" % (self.repository) if self.repository != DEFAULT_REPO_NAME else ''
+
+        return "=%s/%s-%s%s%s" % ( self.category
+                                 , self.package_name
+                                 , self.version
+                                 , slot
+                                 , repository
         )
-    def __unicode__(self):
-        return self.full_atom
 
-class Atom(Package):
+class Atom(AtomABC):
     """
-    Package + operator + possibly postfix operator (*).
+    Like AtomABC, but optionally without a version and with an operator.
     """
 
-    # TODO: operator handling needs more work.
+    # TODO: handle blockers ('!!', '!').
 
-    # '~', '=', '>', '<', '=*', '>=', or '<='
+    # '', '~', '=', '>', '<', '=*', '>=', or '<='. Consult ebuild(5).
     ATOM_OPERATORS = (
-        ('',   'None'),
-        ('~',  'Tilde'),
-        ('=',  'Equals'),
-        ('>',  'GT'),
-        ('<',  'LT'),
-        ('=*', 'Equals Star'),
-        ('>=', 'GE'),
-        ('<=', 'LE'),
+        ('',   'None'),               #
+        ('~',  'Any revision'),       # prefix
+        ('=',  'Equals'),             # prefix
+        ('>',  'Greater than'),       # prefix
+        ('<',  'Less than'),          # prefix
+        ('>=', 'GE'),                 # prefix
+        ('<=', 'LE'),                 # prefix
+        ('=*', 'Version glob match'), # '=' prefix + '*' postfix
     )
 
-    ATOM_OPERATORS_POSTFIX = (
-        ('',  'None'),
-        ('*', 'Star'),
-    )
-
-    # TODO: normalise this when everything is properly implemented.
     full_atom = models.CharField(primary_key=True, max_length=64, validators=[atom_validator])
-    package   = models.ForeignKey(Package, related_name='atoms')
+    operator  = models.CharField(max_length=2, blank=True, choices=ATOM_OPERATORS, default='')
+    version   = models.CharField(max_length=32, blank=True, validators=[version_validator])
 
-    # operator         = models.CharField(max_length=2, choices=ATOM_OPERATORS, default='')
-    # operator_postfix = models.CharField(max_length=1, choices=ATOM_OPERATORS_POSTFIX, default='')
+    class Meta:
+        unique_together = ( 'category'
+                          , 'package_name'
+                          , 'version'
+                          , 'slot'
+                          , 'repository'
+                          , 'full_atom'
+                          , 'operator'
+        )
+
+    @models.permalink
+    def get_absolute_url(self):
+        # TODO
+        return ('atom_details_url', (), {'id': self.id})
 
     def __unicode__(self):
         return self.full_atom
@@ -213,7 +242,12 @@ class Feature(models.Model):
     A Portage FEATURE.
     """
 
-    name     = models.CharField(primary_key=True, max_length=64, validators=[feature_validator])
+    # TODO: make this case insensitive?
+
+    name = models.CharField( primary_key =True
+                           , max_length  = 64
+                           , validators=[feature_validator]
+    )
     added_on = models.DateTimeField(auto_now_add=True)
 
     @models.permalink
@@ -225,13 +259,16 @@ class Feature(models.Model):
         return self.name
 
 class MirrorServer(models.Model):
-    url = models.URLField(primary_key=True, max_length=256)
+    # url = models.URLField(primary_key=True, max_length=256)
+    url = models.CharField(primary_key=True, max_length=256)
 
     def __unicode__(self):
         return self.url
 
+# sync_server_validator = TODO
 class SyncServer(models.Model):
-    url = models.URLField(primary_key=True, max_length=256)
+    # By default URLField does not like urls starting with 'rsync://'.
+    url = models.CharField(primary_key=True, max_length=256)
 
     def __unicode__(self):
         return self.url
@@ -252,9 +289,9 @@ class Installation(models.Model):
     package    = models.ForeignKey(Package)
     submission = models.ForeignKey('Submission')
 
-    built_at       = models.DateTimeField()
-    build_duration = models.TimeField()
-    size           = models.IntegerField()
+    built_at       = models.DateTimeField(null=True)
+    build_duration = models.IntegerField(null=True)
+    size           = models.IntegerField(null=True)
 
     # enabled and disabled use flags (should be disjoint):
     # TODO: useplus <intersection> useminus should == []
@@ -266,8 +303,9 @@ class Installation(models.Model):
     keyword = models.ForeignKey(Keyword)
 
     # TODO:
-    # def __unicode__(self):
-    #     return "Installation: cpv '%s' installed at '%s' with '%s' use flags." % (atom, datetime, useflags)
+    def __unicode__(self):
+        return "Installation: '%s' installed at '%s' with +%s and -%s use flags." \
+            % (self.package, self.built_at, str(self.useplus.all()), str(self.useminus.all()))
 
 class Selection(models.Model):
     """
@@ -284,14 +322,14 @@ class Selection(models.Model):
     def __unicode__(self):
         return "TODO"
 
-class PackageSet(models.Model):
+class AtomSet(models.Model):
     name  = models.CharField(max_length=128)
     owner = models.ForeignKey('Submission')
 
-    packages = models.ManyToManyField(Package, related_name='parentset')
-    subsets  = models.ManyToManyField( 'self'
-                                     , symmetrical  = False
-                                     , related_name = 'parentset'
+    atoms   = models.ManyToManyField(Atom, related_name='parentset')
+    subsets = models.ManyToManyField( 'self'
+                                    , symmetrical  = False
+                                    , related_name = 'parentset'
     )
 
     class Meta():
@@ -313,45 +351,45 @@ class Submission(models.Model):
 
     # The email can change between submissions, so let's store it here.
     # Also, let's 'accept' invalid email addresses for the time being.
-    email    = models.EmailField(blank=True, max_length=256)
+    email    = models.EmailField(blank=True, null=True, max_length=256)
 
     # ACCEPT_KEYWORDS (Example: "~amd64")
-    arch     = models.CharField(blank=True, max_length=32)
+    arch     = models.CharField(blank=True, null=True, max_length=32)
 
     # arch-vendor-OS-libc (Example: "x86_64-pc-linux-gnu")
-    chost    = models.CharField(blank=True, max_length=64)
+    chost    = models.CharField(blank=True, null=True, max_length=64)
 
     # Cross-compiling variables (build/target CHOSTs):
-    cbuild   = models.CharField(blank=True, max_length=64)
-    ctarget  = models.CharField(blank=True, max_length=64)
+    cbuild   = models.CharField(blank=True, null=True, max_length=64)
+    ctarget  = models.CharField(blank=True, null=True, max_length=64)
 
     # Platform (Example: "Linux-3.2.1-gentoo-r2-x86_64-Intel-R-_Core-TM-_i3_CPU_M_330_@_2.13GHz-with-gentoo-2.0.3")
-    platform = models.CharField(blank=True, max_length=256)
+    platform = models.CharField(blank=True, null=True, max_length=256)
 
     # Active Gentoo profile:
-    profile  = models.CharField(blank=True, max_length=128)
+    profile  = models.CharField(blank=True, null=True, max_length=128)
 
     # System locale (Example: "en_US.utf8")
     lang     = models.ForeignKey(Lang, blank=True, null=True, related_name='submissions')
 
     # Last sync time:
-    lastsync = models.DateTimeField(blank=True)
+    lastsync = models.DateTimeField(blank=True, null=True)
 
     # make.conf:
-    makeconf = models.TextField(blank=True)
+    makeconf = models.TextField(blank=True, null=True)
 
     # cc flags, c++ flags, ld flags, cpp flags, and fortran flags:
-    cflags   = models.CharField(blank=True, max_length=128)
-    cxxflags = models.CharField(blank=True, max_length=128)
-    ldflags  = models.CharField(blank=True, max_length=128)
-    cppflags = models.CharField(blank=True, max_length=128)
-    fflags   = models.CharField(blank=True, max_length=128)
+    cflags   = models.CharField(blank=True, null=True, max_length=128)
+    cxxflags = models.CharField(blank=True, null=True, max_length=128)
+    ldflags  = models.CharField(blank=True, null=True, max_length=128)
+    cppflags = models.CharField(blank=True, null=True, max_length=128)
+    fflags   = models.CharField(blank=True, null=True, max_length=128)
 
     # Portage features (enabled in make.conf):
     features = models.ManyToManyField(Feature, blank=True, null=True, related_name='submissions')
 
     # make.conf example: SYNC="rsync://rsync.gentoo.org/gentoo-portage"
-    sync     = models.ManyToManyField(SyncServer, blank=True, null=True, related_name='submissions')
+    sync     = models.ForeignKey(SyncServer, blank=True, null=True, related_name='+')
 
     # make.conf example: GENTOO_MIRRORS="http://gentoo.osuosl.org/"
     mirrors  = models.ManyToManyField(MirrorServer, blank=True, null=True, related_name='submissions')
@@ -363,10 +401,10 @@ class Submission(models.Model):
     selected_atoms     = models.ManyToManyField(Atom, blank=True, null=True, related_name='submissions_selected', through=Selection)
 
     # misc. make.conf variables:
-    makeopts      = models.CharField(blank=True, max_length=128)
-    emergeopts    = models.CharField(blank=True, max_length=256)
-    syncopts      = models.CharField(blank=True, max_length=256)
-    acceptlicense = models.CharField(blank=True, max_length=256)
+    makeopts      = models.CharField(blank=True, null=True, max_length=128) # MAKEOPTS
+    emergeopts    = models.CharField(blank=True, null=True, max_length=256) # EMERGE_DEFAULT_OPTS
+    syncopts      = models.CharField(blank=True, null=True, max_length=256) # PORTAGE_RSYNC_EXTRA_OPTS
+    acceptlicense = models.CharField(blank=True, null=True, max_length=256) # ACCEPT_LICENSE
 
     @models.permalink
     def get_absolute_url(self):
