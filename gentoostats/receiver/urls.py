@@ -7,5 +7,5 @@ admin.autodiscover()
 urlpatterns = patterns('gentoostats.receiver.views',
     # NOTE: APPEND_SLASH's redirect may lead to loss of POST data.
 
-    url(r'^/?$', 'process_submission', name='upload_url'),
+    url(r'^/?$', 'accept_submission', name='upload_url'),
 )
