@@ -18,7 +18,7 @@ DEFAULT_REPO_NAME = 'gentoo'
 category_validator = RegexValidator('^(?:\w+-\w+)|virtual$')
 class Category(models.Model):
     name = models.CharField( primary_key = True
-                           , max_length  = 32
+                           , max_length  = 31
                            , validators  = [category_validator]
     )
 
@@ -32,7 +32,7 @@ class Category(models.Model):
 package_name_validator = RegexValidator('^\S+$')
 class PackageName(models.Model):
     name = models.CharField( primary_key = True
-                           , max_length  = 64
+                           , max_length  = 63
                            , validators  = [package_name_validator]
     )
 
@@ -40,13 +40,13 @@ class PackageName(models.Model):
         return self.name
 
 class Repository(models.Model):
-    name = models.CharField(max_length=64, db_index=True)
-    url  = models.CharField(max_length=256, db_index=True, blank=True)
+    name = models.CharField(max_length=63, db_index=True)
+    url  = models.CharField(max_length=255, db_index=True, blank=True)
 
-    # method   = models.CharField(max_length=32)  # e.g. "git"
+    # method   = models.CharField(max_length=31)  # e.g. "git"
     # priority = models.IntegerField()            # e.g. 50
-    # quality  = models.CharField(max_length=32)  # e.g. "experimental"
-    # status   = models.CharField(max_length=32)  # e.g. "official"
+    # quality  = models.CharField(max_length=31)  # e.g. "experimental"
+    # status   = models.CharField(max_length=31)  # e.g. "official"
 
     # description
     # owner
@@ -93,7 +93,7 @@ class AtomABC(models.Model):
 
     category     = models.ForeignKey(Category, related_name='+')
     package_name = models.ForeignKey(PackageName, related_name='+')
-    slot         = models.CharField(max_length=32, blank=True, null=True, validators=[slot_validator])
+    slot         = models.CharField(max_length=31, blank=True, null=True, validators=[slot_validator])
     repository   = models.ForeignKey(Repository, blank=True, null=True, related_name='+')
 
     class Meta:
@@ -108,7 +108,7 @@ class Package(AtomABC):
     """
 
     # version also holds the revision specified (if there's any)
-    version = models.CharField(max_length=32, validators=[version_validator])
+    version = models.CharField(max_length=31, validators=[version_validator])
 
     class Meta:
         unique_together = ( 'category'
@@ -155,9 +155,9 @@ class Atom(AtomABC):
         ('=*', 'Version glob match'), # '=' prefix + '*' postfix
     )
 
-    full_atom = models.CharField(primary_key=True, max_length=64, validators=[atom_validator])
+    full_atom = models.CharField(primary_key=True, max_length=63, validators=[atom_validator])
     operator  = models.CharField(max_length=2, blank=True, choices=ATOM_OPERATORS, default='')
-    version   = models.CharField(max_length=32, blank=True, validators=[version_validator])
+    version   = models.CharField(max_length=31, blank=True, validators=[version_validator])
 
     class Meta:
         unique_together = ( 'category'
@@ -183,7 +183,7 @@ class UseFlag(models.Model):
     A USE flag.
     """
 
-    name     = models.CharField(primary_key=True, max_length=64, validators=[use_flag_validator])
+    name     = models.CharField(primary_key=True, max_length=63, validators=[use_flag_validator])
     added_on = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
@@ -191,13 +191,15 @@ class UseFlag(models.Model):
 
 lang_validator = RegexValidator('^\S+$') # TODO
 class Lang(models.Model):
-    name = models.CharField(primary_key=True, max_length=32, validators=[lang_validator])
+    name = models.CharField(primary_key=True, max_length=31, validators=[lang_validator])
 
     def __unicode__(self):
         return self.name
 
 # UUID format: 8-4-4-4-12 groups of hex.
-uuid_validator = RegexValidator('^[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}$')
+uuid_validator = RegexValidator(
+    '^[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}$'
+)
 class Host(models.Model):
     """
     A computer, identified by 32 hexadecimal digits (with hyphens, case
@@ -215,7 +217,7 @@ class Host(models.Model):
     #     return self.id
 
     # This is the 'password' required to upload stats for this host.
-    upload_key = models.CharField("upload key (needed to upload stats)", max_length=64)
+    upload_key = models.CharField("upload key (needed to upload stats)", max_length=63)
     # TODO: What if the user wants to change his upload_key?
     # Should we support this at all?
 
@@ -247,9 +249,9 @@ class Feature(models.Model):
 
     # TODO: make this case insensitive?
 
-    name = models.CharField( primary_key =True
-                           , max_length  = 64
-                           , validators=[feature_validator]
+    name = models.CharField( primary_key = True
+                           , max_length  = 63
+                           , validators  = [feature_validator]
     )
     added_on = models.DateTimeField(auto_now_add=True)
 
@@ -262,8 +264,8 @@ class Feature(models.Model):
         return self.name
 
 class MirrorServer(models.Model):
-    # url = models.URLField(primary_key=True, max_length=256)
-    url = models.CharField(primary_key=True, max_length=256)
+    # url = models.URLField(primary_key=True, max_length=255)
+    url = models.CharField(primary_key=True, max_length=255)
 
     def __unicode__(self):
         return self.url
@@ -271,14 +273,14 @@ class MirrorServer(models.Model):
 # sync_server_validator = TODO
 class SyncServer(models.Model):
     # By default URLField does not like urls starting with 'rsync://'.
-    url = models.CharField(primary_key=True, max_length=256)
+    url = models.CharField(primary_key=True, max_length=255)
 
     def __unicode__(self):
         return self.url
 
 # TODO: add validator
 class Keyword(models.Model):
-    name     = models.CharField(primary_key=True, max_length=128)
+    name     = models.CharField(primary_key=True, max_length=127)
     added_on = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
@@ -309,7 +311,7 @@ class Installation(models.Model):
         return "'%s' installed at '%s'" % (self.package, self.built_at)
 
 class AtomSet(models.Model):
-    name  = models.CharField(max_length=128)
+    name  = models.CharField(max_length=127)
     owner = models.ForeignKey('Submission')
 
     atoms   = models.ManyToManyField(Atom, related_name='parentset')
@@ -337,23 +339,23 @@ class Submission(models.Model):
 
     # The email can change between submissions, so let's store it here.
     # Also, let's 'accept' invalid email addresses for the time being.
-    email    = models.EmailField(blank=True, null=True, max_length=256)
+    email    = models.EmailField(blank=True, null=True, max_length=255)
 
     # ACCEPT_KEYWORDS (Example: "~amd64")
-    arch     = models.CharField(blank=True, null=True, max_length=32)
+    arch     = models.CharField(blank=True, null=True, max_length=31)
 
     # arch-vendor-OS-libc (Example: "x86_64-pc-linux-gnu")
-    chost    = models.CharField(blank=True, null=True, max_length=64)
+    chost    = models.CharField(blank=True, null=True, max_length=63)
 
     # Cross-compiling variables (build/target CHOSTs):
-    cbuild   = models.CharField(blank=True, null=True, max_length=64)
-    ctarget  = models.CharField(blank=True, null=True, max_length=64)
+    cbuild   = models.CharField(blank=True, null=True, max_length=63)
+    ctarget  = models.CharField(blank=True, null=True, max_length=63)
 
     # Platform (Example: "Linux-3.2.1-gentoo-r2-x86_64-Intel-R-_Core-TM-_i3_CPU_M_330_@_2.13GHz-with-gentoo-2.0.3")
-    platform = models.CharField(blank=True, null=True, max_length=256)
+    platform = models.CharField(blank=True, null=True, max_length=255)
 
     # Active Gentoo profile:
-    profile  = models.CharField(blank=True, null=True, max_length=128)
+    profile  = models.CharField(blank=True, null=True, max_length=127)
 
     # System locale (Example: "en_US.utf8")
     lang     = models.ForeignKey(Lang, blank=True, null=True, related_name='submissions')
@@ -365,11 +367,11 @@ class Submission(models.Model):
     makeconf = models.TextField(blank=True, null=True)
 
     # cc flags, c++ flags, ld flags, cpp flags, and fortran flags:
-    cflags   = models.CharField(blank=True, null=True, max_length=128)
-    cxxflags = models.CharField(blank=True, null=True, max_length=128)
-    ldflags  = models.CharField(blank=True, null=True, max_length=128)
-    cppflags = models.CharField(blank=True, null=True, max_length=128)
-    fflags   = models.CharField(blank=True, null=True, max_length=128)
+    cflags   = models.CharField(blank=True, null=True, max_length=127)
+    cxxflags = models.CharField(blank=True, null=True, max_length=127)
+    ldflags  = models.CharField(blank=True, null=True, max_length=127)
+    cppflags = models.CharField(blank=True, null=True, max_length=127)
+    fflags   = models.CharField(blank=True, null=True, max_length=127)
 
     # Portage features (enabled in make.conf):
     features = models.ManyToManyField(Feature, blank=True, null=True, related_name='submissions')
@@ -387,10 +389,10 @@ class Submission(models.Model):
     selected_sets      = models.ManyToManyField(AtomSet, blank=True, null=True, related_name='submissions_selected_sets')
 
     # misc. make.conf variables:
-    makeopts      = models.CharField(blank=True, null=True, max_length=128) # MAKEOPTS
-    emergeopts    = models.CharField(blank=True, null=True, max_length=256) # EMERGE_DEFAULT_OPTS
-    syncopts      = models.CharField(blank=True, null=True, max_length=256) # PORTAGE_RSYNC_EXTRA_OPTS
-    acceptlicense = models.CharField(blank=True, null=True, max_length=256) # ACCEPT_LICENSE
+    makeopts      = models.CharField(blank=True, null=True, max_length=127) # MAKEOPTS
+    emergeopts    = models.CharField(blank=True, null=True, max_length=255) # EMERGE_DEFAULT_OPTS
+    syncopts      = models.CharField(blank=True, null=True, max_length=255) # PORTAGE_RSYNC_EXTRA_OPTS
+    acceptlicense = models.CharField(blank=True, null=True, max_length=255) # ACCEPT_LICENSE
 
     @models.permalink
     def get_absolute_url(self):
