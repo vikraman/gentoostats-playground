@@ -83,6 +83,7 @@ class AtomABC(models.Model):
       version (plus optional revision) (optional)  (not defined here)
       slot                             (optional)
       repository                       (optional)
+      use flag choices                 (optional)  (not defined here)
 
     For more Slotting info, please see
     http://devmanual.gentoo.org/general-concepts/slotting/index.html
@@ -135,10 +136,12 @@ class Package(AtomABC):
 
 class Atom(AtomABC):
     """
-    Like AtomABC, but optionally without a version and with an operator.
+    Like AtomABC, but optionally: without a version, with an operator, and with
+    use flag specifications.
     """
 
     # TODO: handle blockers ('!!', '!').
+    # TODO: handle use flag specifications ('vim[X]').
 
     # '', '~', '=', '>', '<', '=*', '>=', or '<='. Consult ebuild(5).
     ATOM_OPERATORS = (
@@ -293,34 +296,17 @@ class Installation(models.Model):
     build_duration = models.IntegerField(null=True)
     size           = models.IntegerField(null=True)
 
-    # enabled and disabled use flags (should be disjoint):
-    # TODO: useplus <intersection> useminus should == []
-    useplus  = models.ManyToManyField(UseFlag, blank=True, related_name='installation_plus')
-    useminus = models.ManyToManyField(UseFlag, blank=True, related_name='installation_minus')
-    useunset = models.ManyToManyField(UseFlag, blank=True, related_name='installation_unset')
+    # TODO: better documentation and verification
+    use_iuse   = models.ManyToManyField(UseFlag, blank=True, related_name='installation_iuse')
+    use_pkguse = models.ManyToManyField(UseFlag, blank=True, related_name='installation_pkguse')
+    use_final  = models.ManyToManyField(UseFlag, blank=True, related_name='installation_final')
 
     # keyword used:
     keyword = models.ForeignKey(Keyword)
 
     # TODO:
     def __unicode__(self):
-        return "Installation: '%s' installed at '%s' with +%s and -%s use flags." \
-            % (self.package, self.built_at, str(self.useplus.all()), str(self.useminus.all()))
-
-class Selection(models.Model):
-    """
-    USE flags for an atom.
-    """
-
-    atom       = models.ForeignKey(Atom)
-    submission = models.ForeignKey('Submission')
-
-    useplus  = models.ManyToManyField(UseFlag, blank=True, related_name='selection_plus')
-    useminus = models.ManyToManyField(UseFlag, blank=True, related_name='selection_minus')
-    useunset = models.ManyToManyField(UseFlag, blank=True, related_name='selection_unset')
-
-    def __unicode__(self):
-        return "TODO"
+        return "'%s' installed at '%s'" % (self.package, self.built_at)
 
 class AtomSet(models.Model):
     name  = models.CharField(max_length=128)
@@ -398,7 +384,7 @@ class Submission(models.Model):
     global_keywords = models.ManyToManyField(Keyword, blank=True, null=True, related_name='submissions')
 
     installed_packages = models.ManyToManyField(Package, blank=True, null=True, related_name='submissions_installed', through=Installation)
-    selected_atoms     = models.ManyToManyField(Atom, blank=True, null=True, related_name='submissions_selected', through=Selection)
+    selected_sets      = models.ManyToManyField(AtomSet, blank=True, null=True, related_name='submissions_selected_sets')
 
     # misc. make.conf variables:
     makeopts      = models.CharField(blank=True, null=True, max_length=128) # MAKEOPTS

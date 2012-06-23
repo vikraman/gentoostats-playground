@@ -120,7 +120,8 @@ def process_submission(request):
     lastsync = data.get('LASTSYNC')
     if lastsync:
         try:
-            # FIXME: time zone offset
+            # FIXME: I've hardcoded the time zone here.
+            # This is why: http://bugs.python.org/issue6641 .
             lastsync = datetime.fromtimestamp(time.mktime(
                 time.strptime(lastsync, "%a, %d %b %Y %H:%M:%S +0000")
             ))
@@ -357,6 +358,7 @@ def process_submission(request):
                         raise BadRequestException(error_message)
 
                 atom_set.full_clean()
+                submission.selected_sets.add(atom_set)
             except ValidationError as e:
                 error_message = \
                         "Error: Selected set '%s' failed validation." \
