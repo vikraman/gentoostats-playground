@@ -328,7 +328,9 @@ class AtomSet(models.Model):
     #     return "AtomSet '%s' with '%s' atoms owned by '%s'" % (name, atoms, owner)
 
 class Submission(models.Model):
-    host     = models.ForeignKey(Host)
+    raw_request_filename = models.CharField(max_length=127, unique=True)
+
+    host     = models.ForeignKey(Host, related_name='submissions')
     ip_addr  = models.GenericIPAddressField()
     fwd_addr = models.GenericIPAddressField(blank=True) # X-Forwarded-For
     datetime = models.DateTimeField(auto_now_add=True)

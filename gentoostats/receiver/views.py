@@ -34,6 +34,15 @@ class SimpleHttpRequest(object):
         )
 
 def save_request(request):
+    """
+    Saves all 'str' or 'unicode' properties of a Django Request object in a
+    file.
+
+    Returns the name of the newly created file.
+
+    Throws FileExistsException if a new file could not be created.
+    """
+
     ip_addr = request.META['REMOTE_ADDR']
 
     # We can't serialise the whole object, so we only serialise the strings:
@@ -57,7 +66,15 @@ def save_request(request):
     with open(file_path, 'wb') as f:
         pickle.dump(request_copy, f)
 
+    return file_name
+
 def validate_item(item):
+    """
+    Call .full_clean() on a Django model object.
+
+    If this results in a ValidationError, then a BadRequestException is raised.
+    """
+
     # TODO: also log information such as type(item).
 
     try:
@@ -70,9 +87,13 @@ def validate_item(item):
 @csrf_exempt
 @transaction.commit_on_success
 def process_submission(request):
+    """
+    Saves and parses a stats submission.
+    """
+
     # Before continuing let's save the whole request (for debugging):
     try:
-        save_request(request)
+        raw_request_filename = save_request(request)
     except FileExistsException as e:
         raise BadRequestException("Error: Unable to save your request.")
 
@@ -187,6 +208,8 @@ def process_submission(request):
         validate_item(sync)
 
     submission = Submission.objects.create(
+        raw_request_filename = raw_request_filename,
+
         host          = host,
         email         = data['AUTH'].get('EMAIL'),
         ip_addr       = request.META['REMOTE_ADDR'],
@@ -370,11 +393,14 @@ def process_submission(request):
                 raise BadRequestException(error_message)
 
     submission.full_clean()
-    # transaction.commit()
     return HttpResponse("Success")
 
 @csrf_exempt
 def accept_submission(request):
+    """
+    Simple wrapper around process_submission().
+    """
+
     if request.method != 'POST':
         logger.info("process_submission(): Invalid method use attempt.")
         return HttpResponseBadRequest("Error: You are not using POST.")
