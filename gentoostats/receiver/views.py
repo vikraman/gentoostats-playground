@@ -190,11 +190,11 @@ def process_submission(request):
         host          = host,
         email         = data['AUTH'].get('EMAIL'),
         ip_addr       = request.META['REMOTE_ADDR'],
-        fwd_addr      = request.META.get('REMOTE_ADDR'),
+        fwd_addr      = request.META.get('HTTP_X_FORWARDED_FOR'), # TODO
 
         protocol      = protocol,
 
-        arch          = data.get('REMOTE_ADDR'),
+        arch          = data.get('ARCH'),
         chost         = data.get('CHOST'),
         cbuild        = data.get('CBUILD'),
         ctarget       = data.get('CTARGET'),
