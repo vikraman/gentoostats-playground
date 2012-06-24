@@ -293,16 +293,18 @@ def process_submission(request):
 
                     return useflag_list
 
-                useplus  = _get_useflag_objects(useflags.get('PLUS'))
-                useminus = _get_useflag_objects(useflags.get('MINUS'))
-                useunset = _get_useflag_objects(useflags.get('UNSET'))
+                use_iuse   = _get_useflag_objects(useflags.get('IUSE'))
+                use_pkguse = _get_useflag_objects(useflags.get('PKGUSE'))
+                use_final  = _get_useflag_objects(useflags.get('FINAL'))
 
-                if useplus:
-                    installation.useplus.add(*useplus)
-                if useminus:
-                    installation.useminus.add(*useminus)
-                if useunset:
-                    installation.useunset.add(*useunset)
+                if use_iuse:
+                    installation.use_iuse.add(*use_iuse)
+                if use_pkguse:
+                    installation.use_pkguse.add(*use_pkguse)
+                if use_final:
+                    installation.use_final.add(*use_final)
+
+            installation.full_clean()
 
     selected_sets = data.get('SELECTEDSETS')
     if selected_sets:
