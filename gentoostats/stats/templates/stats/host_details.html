@@ -1,0 +1,78 @@
+{% extends "stats/base.html" %}
+{% block title %}Details for host {{ host.id }}{% endblock %}
+{% block content %}
+    <h1>Details for host {{ host.id }}</h1>
+
+    {% if latest_submission %}
+        <h2>Submissions:</h2>
+        <ul>
+        {% for submission, protocol in submission_history %}
+            <li>{{ submission }} (protocol: {{protocol}})</li>
+        {% endfor %}
+        </ul>
+
+        <h2>Latest submission</h2>
+
+        <h3>Report submitted at: {{ latest_submission.datetime }}.</h3>
+        <h3>Last tree synchronisation: {{ latest_submission.lastsync }}.</h3>
+        <h3>Tree age at time of report: {{ tree_age }} seconds.</h3>
+
+        <h3>Arch: {{ latest_submission.arch }}.</h3>
+
+        <h3>ACCEPT_KEYWORDS:</h3>
+        {% if latest_submission.global_keywords.count %}
+            <ul>
+            {% for keyword in latest_submission.global_keywords.all %}
+                <li>{{ keyword }}</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <h4>None or not reported.</h4>
+        {% endif %}
+
+        <h3>Global USE flags:</h3>
+        {% if latest_submission.global_use.count %}
+            <ul>
+            {% for useflag in latest_submission.global_use.all %}
+                <li>{{ useflag }}</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <h4>None or not reported.</h4>
+        {% endif %}
+
+        <h3>FEATURES:</h3>
+        {% if latest_submission.features.count %}
+            <ul>
+            {% for feature in latest_submission.features.all %}
+                <li>{{ feature }}</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <h4>None or not reported.</h4>
+        {% endif %}
+
+        <h3>Selected sets:</h3>
+        {% if latest_submission.selected_sets.count %}
+            <ul>
+            {% for set in latest_submission.selected_sets.all %}
+                <li>{{ set }}</li>
+                <ul>
+                    {% for subset in set.subsets.all %}
+                        <li>{{ SETPREFIX }}{{ subset }} (subset)</li>
+                    {% endfor %}
+                    {% for atom in set.atoms.all %}
+                        <li>{{ atom }}</li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <h4>None or not reported.</h4>
+        {% endif %}
+
+    {% else %}
+        <h2>No existing submissions.</h2>
+    {% endif %}
+
+{% endblock %}

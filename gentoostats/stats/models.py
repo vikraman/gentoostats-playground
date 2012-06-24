@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 
 from portage.dep import Atom as PortageAtom
 from portage.exception import InvalidAtom
+from portage._sets import SETPREFIX
 
 # I have tried being consistent with the names defined here:
 # http://devmanual.gentoo.org/ebuild-writing/variables/index.html
@@ -61,8 +62,8 @@ class Repository(models.Model):
     def __unicode__(self):
         return self.name
 
-version_validator  = RegexValidator('^\S+$')
-slot_validator     = RegexValidator('^\S+$')
+version_validator = RegexValidator('^\S+$')
+slot_validator    = RegexValidator('^\S+$')
 
 def atom_validator(atom):
     try:
@@ -91,10 +92,25 @@ class AtomABC(models.Model):
     Consult ebuild(5) if in doubt.
     """
 
-    category     = models.ForeignKey(Category, related_name='+')
-    package_name = models.ForeignKey(PackageName, related_name='+')
-    slot         = models.CharField(max_length=31, blank=True, null=True, validators=[slot_validator])
-    repository   = models.ForeignKey(Repository, blank=True, null=True, related_name='+')
+    category = models.ForeignKey( Category
+                                , related_name = '+'
+    )
+
+    package_name = models.ForeignKey( PackageName
+                                    , related_name = '+'
+    )
+
+    slot = models.CharField( max_length = 31
+                           , blank      = True
+                           , null       = True
+                           , validators = [slot_validator]
+    )
+
+    repository = models.ForeignKey( Repository
+                                  , blank        = True
+                                  , null         = True
+                                  , related_name = '+'
+    )
 
     class Meta:
         abstract = True
@@ -155,9 +171,21 @@ class Atom(AtomABC):
         ('=*', 'Version glob match'), # '=' prefix + '*' postfix
     )
 
-    full_atom = models.CharField(primary_key=True, max_length=63, validators=[atom_validator])
-    operator  = models.CharField(max_length=2, blank=True, choices=ATOM_OPERATORS, default='')
-    version   = models.CharField(max_length=31, blank=True, validators=[version_validator])
+    full_atom = models.CharField( primary_key = True
+                                , max_length  = 63
+                                , validators  = [atom_validator]
+    )
+
+    operator = models.CharField( max_length = 2
+                               , blank = True
+                               , choices = ATOM_OPERATORS
+                               , default=''
+    )
+
+    version = models.CharField( max_length = 31
+                              , blank      = True
+                              , validators = [version_validator]
+    )
 
     class Meta:
         unique_together = ( 'category'
@@ -183,7 +211,11 @@ class UseFlag(models.Model):
     A USE flag.
     """
 
-    name     = models.CharField(primary_key=True, max_length=63, validators=[use_flag_validator])
+    name = models.CharField( primary_key = True
+                           , max_length  = 63
+                           , validators  = [use_flag_validator]
+    )
+
     added_on = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
@@ -191,7 +223,14 @@ class UseFlag(models.Model):
 
 lang_validator = RegexValidator('^\S+$') # TODO
 class Lang(models.Model):
-    name = models.CharField(primary_key=True, max_length=31, validators=[lang_validator])
+    """
+    System $LANG.
+    """
+
+    name = models.CharField( primary_key = True
+                           , max_length  = 31
+                           , validators  = [lang_validator]
+    )
 
     def __unicode__(self):
         return self.name
@@ -205,11 +244,14 @@ class Host(models.Model):
     A computer, identified by 32 hexadecimal digits (with hyphens, case
     insensitive).
 
-    UUID Info: http://en.wikipedia.org/wiki/Universally_unique_identifier
-               http://tools.ietf.org/html/rfc4122
+    UUID Info: http://tools.ietf.org/html/rfc4122
+               http://en.wikipedia.org/wiki/Universally_unique_identifier
     """
 
-    id = models.CharField(primary_key=True, max_length=36, validators=[uuid_validator])
+    id = models.CharField( primary_key = True
+                         , max_length  = 36
+                         , validators  = [uuid_validator]
+    )
 
     # TODO: prevent accidental overwritting of self.uuid
     # @property
@@ -221,13 +263,12 @@ class Host(models.Model):
     # TODO: What if the user wants to change his upload_key?
     # Should we support this at all?
 
-    deleted = models.BooleanField(default=False, db_index=True)
-    # TODO: Should users be allowed to delete their profile + submissions?
-    # should these be actually deleted from the db?
-    # Should old data get removed from the db?
-
     # A small optimisation:
-    # latest_submission = models.ForeignKey('Submission', related_name='+')
+    # latest_submission = models.ForeignKey( 'Submission'
+    #                                      , related_name = '+'
+    #                                      , null         = True
+    #                                      , default      = None
+    # )
 
     @property
     def latest_submission(self):
@@ -294,9 +335,10 @@ class Installation(models.Model):
     package    = models.ForeignKey(Package)
     submission = models.ForeignKey('Submission')
 
-    built_at       = models.DateTimeField(null=True)
-    build_duration = models.IntegerField(null=True)
-    size           = models.IntegerField(null=True)
+    # yes, blank must be True
+    built_at       = models.DateTimeField(blank=True, null=True)
+    build_duration = models.IntegerField(blank=True, null=True)
+    size           = models.IntegerField(blank=True, null=True)
 
     # TODO: better documentation and verification
     use_iuse   = models.ManyToManyField(UseFlag, blank=True, related_name='installation_iuse')
@@ -314,25 +356,29 @@ class AtomSet(models.Model):
     name  = models.CharField(max_length=127)
     owner = models.ForeignKey('Submission')
 
-    atoms   = models.ManyToManyField(Atom, related_name='parentset')
+    atoms   = models.ManyToManyField(Atom, related_name='parent_set')
     subsets = models.ManyToManyField( 'self'
                                     , symmetrical  = False
-                                    , related_name = 'parentset'
+                                    , blank        = True
+                                    , related_name = 'parent_set'
     )
 
     class Meta():
         unique_together = ('name', 'owner')
 
-    # TODO:
     # def __unicode__(self):
-    #     return "AtomSet '%s' with '%s' atoms owned by '%s'" % (name, atoms, owner)
+    #     return "'%s' (has '%d' atoms and '%d' subsets, owned by '%s')" % \
+    #         (self.name, self.atoms.count(), self.subsets.count(), self.owner)
+
+    def __unicode__(self):
+        return "%s%s" % (SETPREFIX, self.name)
 
 class Submission(models.Model):
     raw_request_filename = models.CharField(max_length=127, unique=True)
 
     host     = models.ForeignKey(Host, related_name='submissions')
     ip_addr  = models.GenericIPAddressField()
-    fwd_addr = models.GenericIPAddressField(blank=True) # X-Forwarded-For
+    fwd_addr = models.GenericIPAddressField(blank=True, null=True) # X-Forwarded-For
     datetime = models.DateTimeField(auto_now_add=True)
     protocol = models.IntegerField()
 
@@ -376,19 +422,19 @@ class Submission(models.Model):
     fflags   = models.CharField(blank=True, null=True, max_length=127)
 
     # Portage features (enabled in make.conf):
-    features = models.ManyToManyField(Feature, blank=True, null=True, related_name='submissions')
+    features = models.ManyToManyField(Feature, blank=True, related_name='submissions')
 
     # make.conf example: SYNC="rsync://rsync.gentoo.org/gentoo-portage"
     sync     = models.ForeignKey(SyncServer, blank=True, null=True, related_name='+')
 
     # make.conf example: GENTOO_MIRRORS="http://gentoo.osuosl.org/"
-    mirrors  = models.ManyToManyField(MirrorServer, blank=True, null=True, related_name='submissions')
+    mirrors  = models.ManyToManyField(MirrorServer, blank=True, related_name='submissions')
 
-    global_use      = models.ManyToManyField(UseFlag, blank=True, null=True, related_name='submissions')
-    global_keywords = models.ManyToManyField(Keyword, blank=True, null=True, related_name='submissions')
+    global_use      = models.ManyToManyField(UseFlag, blank=True, related_name='submissions')
+    global_keywords = models.ManyToManyField(Keyword, blank=True, related_name='submissions')
 
-    installed_packages = models.ManyToManyField(Package, blank=True, null=True, related_name='submissions_installed', through=Installation)
-    selected_sets      = models.ManyToManyField(AtomSet, blank=True, null=True, related_name='submissions_selected_sets')
+    installed_packages = models.ManyToManyField(Package, blank=True, related_name='submissions', through=Installation)
+    selected_sets      = models.ManyToManyField(AtomSet, blank=True, related_name='submissions')
 
     # misc. make.conf variables:
     makeopts      = models.CharField(blank=True, null=True, max_length=127) # MAKEOPTS

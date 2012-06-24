@@ -288,17 +288,28 @@ def process_submission(request):
                 keyword.full_clean()
 
             built_at = info.get('BUILD_TIME')
-            if built_at:
+            if not built_at:
+                # Sometimes clients report BUILD_TIME as ''.
+                built_at = None
+            else:
                 built_at = datetime.fromtimestamp(float(built_at))
 
-            installation = Installation.objects.create(
+            build_duration = info.get('BUILD_DURATION')
+            if not build_duration:
+                build_duration = None
+
+            size = info.get('SIZE')
+            if not size:
+                size = None
+
+            installation, _ = Installation.objects.get_or_create(
                 package    = package,
                 submission = submission,
                 keyword    = keyword,
 
                 built_at       = built_at,
-                build_duration = info.get('BUILD_DURATION'), # TODO
-                size           = info.get('SIZE'),
+                build_duration = build_duration, # TODO
+                size           = size,
             )
 
             useflags = info.get('USE')

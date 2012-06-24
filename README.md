@@ -16,6 +16,7 @@ Installation
 Gentoo systems
 --------------
 
+    emerge -av >=dev-lang/python-2.7           # required
     emerge -av >=dev-python/django-1.4         # required
     emerge -av dev-python/south                # optional
     emerge -av dev-python/django-extensions    # optional
