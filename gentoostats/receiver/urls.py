@@ -1,11 +1,12 @@
 from django.conf.urls import patterns, include, url
 
-# Django admin:
-from django.contrib import admin
-admin.autodiscover()
-
 urlpatterns = patterns('gentoostats.receiver.views',
-    # NOTE: APPEND_SLASH's redirect may lead to loss of POST data.
+    # NOTE: A redirect issued by Django's APPEND_SLASH will lead to the loss of
+    # POST data. That's why I explicitly support both /upload and /upload/ in my
+    # url pattern.
 
-    url(r'^/?$', 'accept_submission', name='upload_url'),
+    url( r'^/?$'
+       , 'accept_submission'
+       , name='accept_submission_url'
+    ),
 )

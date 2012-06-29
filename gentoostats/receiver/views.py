@@ -14,6 +14,7 @@ from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 from gentoostats.stats.models import *
 
@@ -107,7 +108,8 @@ def process_submission(request):
 
     # Check for AUTH data:
     try:
-        uuid       = data['AUTH']['UUID']
+        # Make UUIDs case-insensitive by always using lower().
+        uuid       = data['AUTH']['UUID'].lower()
         upload_key = data['AUTH']['PASSWD']
     except KeyError as e:
         error_message = "Error: Incomplete AUTH data."
@@ -312,37 +314,35 @@ def process_submission(request):
                 size           = size,
             )
 
-            useflags = info.get('USE')
-            if useflags:
-                def _get_useflag_objects(useflag_list):
-                    if not useflag_list:
-                        return useflag_list
-
-                    useflag_list = [
-                        UseFlag.objects.get_or_create(name=u)[0] \
-                        for u in useflag_list
-                    ]
-
-                    map(validate_item, useflag_list)
-
+            def _get_useflag_objects(useflag_list):
+                if not useflag_list:
                     return useflag_list
 
-                use_iuse   = _get_useflag_objects(useflags.get('IUSE'))
-                use_pkguse = _get_useflag_objects(useflags.get('PKGUSE'))
-                use_final  = _get_useflag_objects(useflags.get('FINAL'))
+                useflag_list = [
+                    UseFlag.objects.get_or_create(name=u)[0] \
+                    for u in useflag_list
+                ]
 
-                if use_iuse:
-                    installation.use_iuse.add(*use_iuse)
-                if use_pkguse:
-                    installation.use_pkguse.add(*use_pkguse)
-                if use_final:
-                    installation.use_final.add(*use_final)
+                map(validate_item, useflag_list)
+
+                return useflag_list
+
+            iuse   = _get_useflag_objects(info.get('IUSE'))
+            pkguse = _get_useflag_objects(info.get('PKGUSE'))
+            use    = _get_useflag_objects(info.get('USE'))
+
+            if iuse:
+                installation.iuse.add(*iuse)
+            if pkguse:
+                installation.pkguse.add(*pkguse)
+            if use:
+                installation.use.add(*use)
 
             installation.full_clean()
 
-    selected_sets = data.get('SELECTEDSETS')
-    if selected_sets:
-        for set_name, entries in selected_sets.items():
+    reported_sets = data.get('WORLDSET')
+    if reported_sets:
+        for set_name, entries in reported_sets.items():
             try:
                 atom_set, _ = AtomSet.objects.get_or_create(
                     name  = set_name,
@@ -394,7 +394,7 @@ def process_submission(request):
                         raise BadRequestException(error_message)
 
                 atom_set.full_clean()
-                submission.selected_sets.add(atom_set)
+                submission.reported_sets.add(atom_set)
             except ValidationError as e:
                 error_message = \
                         "Error: Selected set '%s' failed validation." \
@@ -407,14 +407,11 @@ def process_submission(request):
     return HttpResponse("Success")
 
 @csrf_exempt
+@require_POST
 def accept_submission(request):
     """
     Simple wrapper around process_submission().
     """
-
-    if request.method != 'POST':
-        logger.info("process_submission(): Invalid method use attempt.")
-        return HttpResponseBadRequest("Error: You are not using POST.")
 
     try:
         return process_submission(request)

@@ -1,0 +1,17 @@
+{% extends "stats/base.html" %}
+
+{% block title %}Keyword statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    <h1>Keyword statistics</h1>
+
+    {% if stats %}
+        <table border="1">
+            <ul>
+                <li>TODO</li>
+            </ul>
+        </table>
+    {% else %}
+        <h1>No submissions (and stats) are present. Sorry.</h1>
+    {% endif %}
+{% endblock content %}

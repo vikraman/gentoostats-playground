@@ -1,4 +1,5 @@
-from django.db import IntegrityError, models
+from django.db import models
+from django.db.models import Max, Count
 from django.core.validators import RegexValidator, URLValidator, validate_email
 from django.core.exceptions import ValidationError
 
@@ -16,33 +17,39 @@ from portage._sets import SETPREFIX
 DEFAULT_REPO_NAME = 'gentoo'
 
 # 'virtual' match idea taken from euscan. Thanks, fox!
-category_validator = RegexValidator('^(?:\w+-\w+)|virtual$')
+category_validator = RegexValidator(r'^(?:\w+-\w+)|virtual$')
 class Category(models.Model):
     name = models.CharField( primary_key = True
                            , max_length  = 31
                            , validators  = [category_validator]
     )
 
-    @models.permalink
-    def get_absolute_url(self):
-        return ('category_details_url', (), {'category': self.name})
+    added_on = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
         return self.name
 
-package_name_validator = RegexValidator('^\S+$')
+    @models.permalink
+    def get_absolute_url(self):
+        return ('stats:category_details_url', (), {'category': self.name})
+
+package_name_validator = RegexValidator(r'^\S+$')
 class PackageName(models.Model):
     name = models.CharField( primary_key = True
                            , max_length  = 63
                            , validators  = [package_name_validator]
     )
 
+    added_on = models.DateTimeField(auto_now_add=True)
+
     def __unicode__(self):
         return self.name
 
 class Repository(models.Model):
     name = models.CharField(max_length=63, db_index=True)
-    url  = models.CharField(max_length=255, db_index=True, blank=True)
+    url  = models.CharField(max_length=255, db_index=True, blank=True, null=True)
+
+    added_on = models.DateTimeField(auto_now_add=True)
 
     # method   = models.CharField(max_length=31)  # e.g. "git"
     # priority = models.IntegerField()            # e.g. 50
@@ -56,14 +63,15 @@ class Repository(models.Model):
     class Meta:
         unique_together = ('name', 'url')
 
-    def get_absolute_url(self):
-        return "TODO"
-
     def __unicode__(self):
         return self.name
 
-version_validator = RegexValidator('^\S+$')
-slot_validator    = RegexValidator('^\S+$')
+    @models.permalink
+    def get_absolute_url(self):
+        return ('stats:repository_details_url', (), {'url': self.url})
+
+version_validator = RegexValidator(r'^\S+$')
+slot_validator    = RegexValidator(r'^\S+$')
 
 def atom_validator(atom):
     try:
@@ -112,10 +120,11 @@ class AtomABC(models.Model):
                                   , related_name = '+'
     )
 
+    added_on = models.DateTimeField(auto_now_add=True)
+
     class Meta:
         abstract = True
 
-# TODO: remove the blank=True things when the client is patched.
 class Package(AtomABC):
     """
     Like AtomABC, but with a mandatory version.
@@ -134,11 +143,6 @@ class Package(AtomABC):
                           , 'repository'
         )
 
-    @models.permalink
-    def get_absolute_url(self):
-        # TODO
-        return ('package_details_url', (), {'id': self.id})
-
     def __unicode__(self):
         slot       = ":%s"  % (self.slot)       if self.slot                            else ''
         repository = "::%s" % (self.repository) if self.repository != DEFAULT_REPO_NAME else ''
@@ -149,6 +153,17 @@ class Package(AtomABC):
                                  , slot
                                  , repository
         )
+
+    @models.permalink
+    def get_absolute_url(self):
+        # TODO:
+        return ('stats:package_details_url', (), {
+            'category': self.category,
+            'package_name': self.package_name,
+            'version': self.version,
+            'slot': self.slot,
+            'repository': self.repository,
+        })
 
 class Atom(AtomABC):
     """
@@ -197,15 +212,15 @@ class Atom(AtomABC):
                           , 'operator'
         )
 
-    @models.permalink
-    def get_absolute_url(self):
-        # TODO
-        return ('atom_details_url', (), {'id': self.id})
-
     def __unicode__(self):
         return self.full_atom
 
-use_flag_validator = RegexValidator('^\S+$')
+    @models.permalink
+    def get_absolute_url(self):
+        # TODO
+        return ('stats:atom_details_url', (), {'id': self.id})
+
+use_flag_validator = RegexValidator(r'^[+\-]?\w[\w@\-+]*$')
 class UseFlag(models.Model):
     """
     A USE flag.
@@ -221,7 +236,27 @@ class UseFlag(models.Model):
     def __unicode__(self):
         return self.name
 
-lang_validator = RegexValidator('^\S+$') # TODO
+    @models.permalink
+    def get_absolute_url(self):
+        return ('stats:useflag_details_url', (), {'useflag': self.name})
+
+    @property
+    def num_submissions(self):
+        return Submission.objects.filter(global_use__name=self.name).count()
+
+    @property
+    def num_all_hosts(self):
+        return Submission.objects.filter(global_use__name=self.name).order_by().aggregate(Count('host', distinct=True)).values()[0]
+
+    @property
+    def num_hosts(self):
+        return Submission.objects.latest_submissions.filter(global_use__name=self.name).count()
+
+    @property
+    def num_previous_hosts(self):
+        return self.num_all_hosts - self.num_hosts
+
+lang_validator = RegexValidator(r'^\S+$') # TODO
 class Lang(models.Model):
     """
     System $LANG.
@@ -232,17 +267,36 @@ class Lang(models.Model):
                            , validators  = [lang_validator]
     )
 
+    added_on = models.DateTimeField(auto_now_add=True)
+
     def __unicode__(self):
         return self.name
 
+    @property
+    def num_submissions(self):
+        return Submission.objects.filter(lang__name=self.name).count()
+
+    @property
+    def num_all_hosts(self):
+        return Submission.objects.filter(lang__name=self.name).order_by().aggregate(Count('host', distinct=True)).values()[0]
+
+    @property
+    def num_hosts(self):
+        return Submission.objects.latest_submissions.filter(lang__name=self.name).count()
+
+    @property
+    def num_previous_hosts(self):
+        return self.num_all_hosts - self.num_hosts
+
 # UUID format: 8-4-4-4-12 groups of hex.
 uuid_validator = RegexValidator(
-    '^[\da-fA-F]{8}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{4}-[\da-fA-F]{12}$'
+    r'^(i?)[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$'
 )
 class Host(models.Model):
     """
-    A computer, identified by 32 hexadecimal digits (with hyphens, case
-    insensitive).
+    A computer, identified by 32 hexadecimal digits (with hyphens, case-
+    sensitive). Make sure to store the UUID in lowercase to make this
+    case-insensitive.
 
     UUID Info: http://tools.ietf.org/html/rfc4122
                http://en.wikipedia.org/wiki/Universally_unique_identifier
@@ -252,6 +306,8 @@ class Host(models.Model):
                          , max_length  = 36
                          , validators  = [uuid_validator]
     )
+
+    added_on = models.DateTimeField(auto_now_add=True)
 
     # TODO: prevent accidental overwritting of self.uuid
     # @property
@@ -270,69 +326,158 @@ class Host(models.Model):
     #                                      , default      = None
     # )
 
-    @property
-    def latest_submission(self):
-        # All hosts must have at least 1 submission.
-        return "TODO"
-
-    @models.permalink
-    def get_absolute_url(self):
-        return ('host_details_url', (), {'id': self.id})
-
     def __unicode__(self):
         return self.id
 
-feature_validator = RegexValidator('^\S+$')
+    @models.permalink
+    def get_absolute_url(self):
+        return ('stats:host_details_url', (), {'id': self.id})
+
+    @property
+    def latest_submission(self):
+        # TODO: Determine whether all hosts should have at least one submission.
+
+        try:
+            return self.submissions.latest('datetime')
+        except Exception as e:
+            return None
+
+    @property
+    def submission_history(self):
+        return self.submissions.order_by('datetime').values_list('datetime', 'protocol')
+
+feature_validator = RegexValidator(r'^\S+$')
 class Feature(models.Model):
     """
     A Portage FEATURE.
     """
 
-    # TODO: make this case insensitive?
+    # TODO: make this case insensitive (like Host.id)?
 
     name = models.CharField( primary_key = True
                            , max_length  = 63
                            , validators  = [feature_validator]
     )
-    added_on = models.DateTimeField(auto_now_add=True)
 
-    @models.permalink
-    def get_absolute_url(self):
-        # TODO
-        return ('feature_details_url', (), {'feature': self.name})
+    added_on = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
         return self.name
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('stats:feature_details_url', (), {'feature': self.name})
+
+    @property
+    def num_submissions(self):
+        return Submission.objects.filter(features__name=self.name).count()
+
+    @property
+    def num_all_hosts(self):
+        return Submission.objects.filter(features__name=self.name).order_by().aggregate(Count('host', distinct=True)).values()[0]
+
+    @property
+    def num_hosts(self):
+        return Submission.objects.latest_submissions.filter(features__name=self.name).count()
+
+    @property
+    def num_previous_hosts(self):
+        return self.num_all_hosts - self.num_hosts
 
 class MirrorServer(models.Model):
     # url = models.URLField(primary_key=True, max_length=255)
     url = models.CharField(primary_key=True, max_length=255)
 
+    added_on = models.DateTimeField(auto_now_add=True)
+
     def __unicode__(self):
         return self.url
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('stats:mirror_details_url', (), {'mirror': self.url})
+
+    @property
+    def num_submissions(self):
+        return Submission.objects.filter(mirrors__url=self.url).count()
+
+    @property
+    def num_all_hosts(self):
+        return Submission.objects.filter(mirrors__url=self.url).order_by().aggregate(Count('host', distinct=True)).values()[0]
+
+    @property
+    def num_hosts(self):
+        return Submission.objects.latest_submissions.filter(mirrors__url=self.url).count()
+
+    @property
+    def num_previous_hosts(self):
+        return self.num_all_hosts - self.num_hosts
 
 # sync_server_validator = TODO
 class SyncServer(models.Model):
     # By default URLField does not like urls starting with 'rsync://'.
     url = models.CharField(primary_key=True, max_length=255)
 
+    added_on = models.DateTimeField(auto_now_add=True)
+
     def __unicode__(self):
         return self.url
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('stats:sync_details_url', (), {'sync': self.url})
+
+    @property
+    def num_submissions(self):
+        return Submission.objects.filter(sync__url=self.url).count()
+
+    @property
+    def num_all_hosts(self):
+        return Submission.objects.filter(sync__url=self.url).order_by().aggregate(Count('host', distinct=True)).values()[0]
+
+    @property
+    def num_hosts(self):
+        return Submission.objects.latest_submissions.filter(sync__url=self.url).count()
+
+    @property
+    def num_previous_hosts(self):
+        return self.num_all_hosts - self.num_hosts
 
 # TODO: add validator
 class Keyword(models.Model):
     name     = models.CharField(primary_key=True, max_length=127)
+
     added_on = models.DateTimeField(auto_now_add=True)
 
     def __unicode__(self):
         return self.name
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('stats:keyword_details_url', (), {'keyword': self.name})
+
+    @property
+    def num_submissions(self):
+        return Submission.objects.filter(global_keywords__name=self.name).count()
+
+    @property
+    def num_all_hosts(self):
+        return Submission.objects.filter(global_keywords__name=self.name).order_by().aggregate(Count('host', distinct=True)).values()[0]
+
+    @property
+    def num_hosts(self):
+        return Submission.objects.latest_submissions.filter(global_keywords__name=self.name).count()
+
+    @property
+    def num_previous_hosts(self):
+        return self.num_all_hosts - self.num_hosts
 
 class Installation(models.Model):
     """
     Package installations on hosts.
     """
 
-    package    = models.ForeignKey(Package)
+    package    = models.ForeignKey(Package, db_index=True)
     submission = models.ForeignKey('Submission')
 
     # yes, blank must be True
@@ -341,9 +486,9 @@ class Installation(models.Model):
     size           = models.IntegerField(blank=True, null=True)
 
     # TODO: better documentation and verification
-    use_iuse   = models.ManyToManyField(UseFlag, blank=True, related_name='installation_iuse')
-    use_pkguse = models.ManyToManyField(UseFlag, blank=True, related_name='installation_pkguse')
-    use_final  = models.ManyToManyField(UseFlag, blank=True, related_name='installation_final')
+    iuse   = models.ManyToManyField(UseFlag, blank=True, related_name='installation_iuse')
+    pkguse = models.ManyToManyField(UseFlag, blank=True, related_name='installation_pkguse')
+    use    = models.ManyToManyField(UseFlag, blank=True, related_name='installation_use')
 
     # keyword used:
     keyword = models.ForeignKey(Keyword)
@@ -372,6 +517,22 @@ class AtomSet(models.Model):
 
     def __unicode__(self):
         return "%s%s" % (SETPREFIX, self.name)
+
+class SubmissionManager(models.Manager):
+    use_for_related_fields = True
+
+    @property
+    def latest_submissions(self):
+        """
+        Return the latest submissions of each host (ordered by PK).
+        """
+
+        latest_submission_ids = Submission.objects.order_by().values('host').annotate(latest_submission_id=Max('id')).values_list('latest_submission_id', flat=True)
+        # This will result in the following query:
+        #     SELECT MAX("stats_submission"."id") AS "latest_submission_id" FROM
+        #     "stats_submission" GROUP BY "stats_submission"."host_id"
+
+        return Submission.objects.filter(pk__in=latest_submission_ids)
 
 class Submission(models.Model):
     raw_request_filename = models.CharField(max_length=127, unique=True)
@@ -434,7 +595,7 @@ class Submission(models.Model):
     global_keywords = models.ManyToManyField(Keyword, blank=True, related_name='submissions')
 
     installed_packages = models.ManyToManyField(Package, blank=True, related_name='submissions', through=Installation)
-    selected_sets      = models.ManyToManyField(AtomSet, blank=True, related_name='submissions')
+    reported_sets      = models.ManyToManyField(AtomSet, blank=True, related_name='submissions')
 
     # misc. make.conf variables:
     makeopts      = models.CharField(blank=True, null=True, max_length=127) # MAKEOPTS
@@ -442,9 +603,29 @@ class Submission(models.Model):
     syncopts      = models.CharField(blank=True, null=True, max_length=255) # PORTAGE_RSYNC_EXTRA_OPTS
     acceptlicense = models.CharField(blank=True, null=True, max_length=255) # ACCEPT_LICENSE
 
-    @models.permalink
-    def get_absolute_url(self):
-        return ('TODO', (), {'id': self.id})
+    objects = SubmissionManager()
 
     def __unicode__(self):
         return "Submission from %s made at %s" % (self.host, self.datetime)
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('stats:submission_details_url', (), {'id': self.id})
+
+    @property
+    def tree_age(self):
+        """
+        Returns self.datetime - self.lastsync in seconds, or None if something
+        goes wrong.
+        """
+
+        if self.lastsync:
+            try:
+                age = int((self.datetime - self.lastsync).total_seconds())
+                assert age >= 0
+                return age
+            except Exception as e:
+                # TODO: log this
+                pass
+
+        return None

@@ -1,0 +1,22 @@
+{% extends "stats/base.html" %}
+
+{% block title %}Overall statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    <h1>Overall statistics</h1>
+
+    {% if num_hosts %}
+        <ul>
+            <li>Number of hosts: {{ num_hosts }}</li>
+            <li>Number of submissions: {{ num_submissions }}</li>
+            <li>Submission history:</li>
+            <ul>
+                {% for datetime, protocol in submission_history %}
+                    <li>{{ datetime }} (P: {{ protocol }})</li>
+                {% endfor %}
+            </ul>
+        </ul>
+    {% else %}
+        <h1>No submissions (and stats) are present yet. Sorry.</h1>
+    {% endif %}
+{% endblock content %}

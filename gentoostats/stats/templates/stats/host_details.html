@@ -1,12 +1,15 @@
 {% extends "stats/base.html" %}
-{% block title %}Details for host {{ host.id }}{% endblock %}
-{% block content %}
-    <h1>Details for host {{ host.id }}</h1>
 
+{% block title %}Detailed Host Statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    <h1>Detailed Host Statistics For '{{ host.id }}'</h1>
+
+    {% with latest_submission=host.latest_submission %}
     {% if latest_submission %}
         <h2>Submissions:</h2>
         <ul>
-        {% for submission, protocol in submission_history %}
+        {% for submission, protocol in host.submission_history %}
             <li>{{ submission }} (protocol: {{protocol}})</li>
         {% endfor %}
         </ul>
@@ -14,16 +17,16 @@
         <h2>Latest submission</h2>
 
         <h3>Report submitted at: {{ latest_submission.datetime }}.</h3>
-        <h3>Last tree synchronisation: {{ latest_submission.lastsync }}.</h3>
-        <h3>Tree age at time of report: {{ tree_age }} seconds.</h3>
+        <h3>Last tree synchronisation: {{ latest_submission.lastsync|default:"?" }}.</h3>
+        <h3>Tree age at time of report: {{ latest_submission.tree_age|default:"?" }} seconds.</h3>
 
-        <h3>Arch: {{ latest_submission.arch }}.</h3>
+        <h3>Arch: {{ latest_submission.arch|default:"?" }}.</h3>
 
         <h3>ACCEPT_KEYWORDS:</h3>
         {% if latest_submission.global_keywords.count %}
             <ul>
             {% for keyword in latest_submission.global_keywords.all %}
-                <li>{{ keyword }}</li>
+                <li><a href="{{ keyword.get_absolute_url }}">{{ keyword }}</a></li>
             {% endfor %}
             </ul>
         {% else %}
@@ -34,7 +37,7 @@
         {% if latest_submission.global_use.count %}
             <ul>
             {% for useflag in latest_submission.global_use.all %}
-                <li>{{ useflag }}</li>
+                <li><a href="{{ useflag.get_absolute_url }}">{{ useflag }}</a></li>
             {% endfor %}
             </ul>
         {% else %}
@@ -45,7 +48,7 @@
         {% if latest_submission.features.count %}
             <ul>
             {% for feature in latest_submission.features.all %}
-                <li>{{ feature }}</li>
+                <li><a href="{{ feature.get_absolute_url }}">{{ feature }}</a></li>
             {% endfor %}
             </ul>
         {% else %}
@@ -53,9 +56,9 @@
         {% endif %}
 
         <h3>Selected sets:</h3>
-        {% if latest_submission.selected_sets.count %}
+        {% if latest_submission.reported_sets.count %}
             <ul>
-            {% for set in latest_submission.selected_sets.all %}
+            {% for set in latest_submission.reported_sets.all %}
                 <li>{{ set }}</li>
                 <ul>
                     {% for subset in set.subsets.all %}
@@ -74,5 +77,6 @@
     {% else %}
         <h2>No existing submissions.</h2>
     {% endif %}
+    {% endwith %}
 
-{% endblock %}
+{% endblock content %}

@@ -1,0 +1,23 @@
+{% extends "stats/base.html" %}
+
+{% block title %}Home | Gentoostats{% endblock title %}
+
+{% block content %}
+    <h1>Available Statistics:</h1>
+    <ul>
+        <li><a href="{% url stats:overall_stats_url %}">Overall stats</a></li>
+        <li><a href="{% url stats:host_stats_url %}">Host stats</a></li>
+        <li><a href="{% url stats:host_search_url %}">Host search</a></li>
+        <li><a href="{% url stats:submission_stats_url %}">Submission stats</a></li>
+        <li><a href="{% url stats:arch_stats_url %}">ARCH stats</a></li>
+        <li><a href="{% url stats:feature_stats_url %}">FEATURE stats</a></li>
+        <li><a href="{% url stats:profile_stats_url %}">Profile stats</a></li>
+        <li><a href="{% url stats:lang_stats_url %}">Lang stats</a></li>
+        <li><a href="{% url stats:keyword_stats_url %}">Keyword stats</a></li>
+        <li><a href="{% url stats:useflag_stats_url %}">USE stats</a></li>
+        <li><a href="{% url stats:repository_stats_url %}">Repository stats</a></li>
+        <li><a href="{% url stats:category_stats_url %}">Category stats</a></li>
+        <li><a href="{% url stats:mirror_stats_url %}">Mirror stats</a></li>
+        <li><a href="{% url stats:sync_stats_url %}">Sync stats</a></li>
+    </ul>
+{% endblock content %}

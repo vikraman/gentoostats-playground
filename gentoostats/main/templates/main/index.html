@@ -1,0 +1,8 @@
+{% extends "stats/base.html" %}
+
+{% block title %}No Title{% endblock title %}
+
+{% block content %}
+    {% url stats:index_url as stats_index %}
+    <h1>You are probably looking for <a href="{{ stats_index }}">{{ stats_index }}</a>.</h1>
+{% endblock content %}
