@@ -11,7 +11,7 @@
             <th>Hosts</th>
             {% for feature in features %}
                 <tr>
-                    <td><a href="{% feature.get_absolute_url %}">{{ feature }}</a></td>
+                    <td><a href="{{ feature.get_absolute_url }}">{{ feature }}</a></td>
                     <td>{{ feature.num_hosts }}</td>
                 </tr>
             {% endfor %}
