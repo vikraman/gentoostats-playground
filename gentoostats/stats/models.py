@@ -483,7 +483,7 @@ class Installation(models.Model):
     # yes, blank must be True
     built_at       = models.DateTimeField(blank=True, null=True)
     build_duration = models.IntegerField(blank=True, null=True)
-    size           = models.IntegerField(blank=True, null=True)
+    size           = models.BigIntegerField(blank=True, null=True)
 
     # TODO: better documentation and verification
     iuse   = models.ManyToManyField(UseFlag, blank=True, related_name='installation_iuse')
