@@ -1,3 +1,4 @@
+{% load url from future %}
 {% spaceless %}
     <!DOCTYPE html>
     <html lang="en">
@@ -12,8 +13,8 @@
                 <div id="header">
                     {% block header %}
                         <ul>
-                            <li><a href="{% url stats:index_url %}">Home</a></li>
-                            <li><a href="{% url stats:about_url %}">About</a></li>
+                            <li><a href="{% url 'stats:index_url' %}">Home</a></li>
+                            <li><a href="{% url 'stats:about_url' %}">About</a></li>
                         </ul>
                     {% endblock header %}
                 </div>
