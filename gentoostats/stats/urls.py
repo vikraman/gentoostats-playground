@@ -1,6 +1,4 @@
 from django.conf.urls import patterns, include, url
-from django.views.generic import RedirectView
-from django.core.urlresolvers import reverse_lazy
 
 urlpatterns = patterns('gentoostats.stats.views',
     url( r'^$'
@@ -18,6 +16,7 @@ urlpatterns = patterns('gentoostats.stats.views',
        , name='overall_stats_url'
     ),
 
+    # Host(s): #{{{
     url( r'^host_search/$'
        , 'host_search'
        , name='host_search_url'
@@ -32,7 +31,9 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'host_details'
        , name='host_details_url'
     ),
+    #}}}
 
+    # ARCH(es): #{{{
     url( r'^arch/$'
        , 'arch_stats'
        , name='arch_stats_url'
@@ -42,7 +43,9 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'arch_details'
        , name='arch_details_url'
     ),
+    #}}}
 
+    # FEATURE(s): #{{{
     url( r'^feature/$'
        , 'feature_stats'
        , name='feature_stats_url'
@@ -52,7 +55,9 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'feature_details'
        , name='feature_details_url'
     ),
+    #}}}
 
+    # Keyword(s): #{{{
     url( r'^keyword/$'
        , 'keyword_stats'
        , name='keyword_stats_url'
@@ -62,7 +67,9 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'keyword_details'
        , name='keyword_details_url'
     ),
+    #}}}
 
+    # Repository(ies): #{{{
     url( r'^repository/$'
        , 'repository_stats'
        , name='repository_stats_url'
@@ -72,7 +79,9 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'repository_details'
        , name='repository_details_url'
     ),
+    #}}}
 
+    # Mirror(s): #{{{
     url( r'^mirror/$'
        , 'mirror_stats'
        , name='mirror_stats_url'
@@ -82,7 +91,9 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'mirror_details'
        , name='mirror_details_url'
     ),
+    #}}}
 
+    # SYNC(s): #{{{
     url( r'^sync/$'
        , 'sync_stats'
        , name='sync_stats_url'
@@ -92,7 +103,9 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'sync_details'
        , name='sync_details_url'
     ),
+    #}}}
 
+    # Profile(s): #{{{
     url( r'^profile/$'
        , 'profile_stats'
        , name='profile_stats_url'
@@ -102,7 +115,9 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'profile_details'
        , name='profile_details_url'
     ),
+    #}}}
 
+    # LANG(s): #{{{
     url( r'^lang/$'
        , 'lang_stats'
        , name='lang_stats_url'
@@ -112,7 +127,9 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'lang_details'
        , name='lang_details_url'
     ),
+    #}}}
 
+    # Category(ies): #{{{
     url( r'^category/$'
        , 'category_stats'
        , name='category_stats_url'
@@ -122,7 +139,9 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'category_details'
        , name='category_details_url'
     ),
+    #}}}
 
+    # Submission(s): #{{{
     url( r'^submission/$'
        , 'submission_stats'
        , name='submission_stats_url'
@@ -132,7 +151,9 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'submission_details'
        , name='submission_details_url'
     ),
+    #}}}
 
+    # USE flag(s): #{{{
     url( r'^use/$'
        , 'useflag_stats'
        , name='useflag_stats_url'
@@ -142,11 +163,7 @@ urlpatterns = patterns('gentoostats.stats.views',
        , 'useflag_details'
        , name='useflag_details_url'
     ),
+    #}}}
 
     # TODO: /package/
-
-    # TODO: Redirect /features/... to /feature/...
-    url( r'^features/$'
-       , RedirectView.as_view(url=reverse_lazy('feature_stats_url'))
-    ),
 )
