@@ -231,7 +231,6 @@ def process_submission(request):
         cflags        = data.get('CFLAGS'),
         cxxflags      = data.get('CXXFLAGS'),
         ldflags       = data.get('LDFLAGS'),
-        cppflags      = data.get('CPPFLAGS'),
         fflags        = data.get('FFLAGS'),
 
         makeopts      = data.get('MAKEOPTS'),

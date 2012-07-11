@@ -286,25 +286,30 @@ def lang_details(request, lang):
 
     return render(request, 'stats/not_implemented.html')
 
-@cache_control(public=True)
-@cache_page(1 * 60)
-def submission_stats(request):
-    """
-    TODO: add a description.
-    """
+# Submissions: #{{{
+class SubmissionListView(ImprovedListView):
+    context_object_name = 'submissions'
+    queryset = Submission.objects.select_related()
 
-    return render(request, 'stats/not_implemented.html')
+submission_stats = \
+    cache_control(public=True) (
+        cache_page(1 * 60) (
+            SubmissionListView.as_view()
+        )
+    )
 
 class SubmissionDetailView(ImprovedDetailView):
     context_object_name = 'submission'
-    queryset = Submission.objects.select_related()
+    queryset = Submission.objects.select_related().order_by('-datetime')
     pk_url_kwarg = 'id'
 
-submission_details = cache_control(private=True)(
-    cache_page(1 * 60)(
-        SubmissionDetailView.as_view()
+submission_details = \
+    cache_control(private=True) (
+        cache_page(1 * 60) (
+            SubmissionDetailView.as_view()
+        )
     )
-)
+#}}}
 
 @cache_control(public=True)
 @cache_page(1 * 60)

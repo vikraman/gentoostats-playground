@@ -11,20 +11,16 @@
     <li>Platform: '{{ submission.platform }}'.</li>
     <li>LANG: '{{ submission.lang }}'.</li>
 
-    {% if submission.makeconf %}
-        <li>Makeconf: yes.</li>
-    {% else %}
-        <li>Makeconf: no.</li>
-    {% endif %}
+    <li>Makeconf: {{ submission.makeconf|yesno:"yes,empty,no" }}.</li>
 
-    <li>CFLAGS: '{{ submission.cflags|default:'?' }}'</li>
-    <li>CXXFLAGS: '{{ submission.cxxflags|default:'?' }}'</li>
-    <li>LDFLAGS: '{{ submission.ldflags|default:'?' }}'</li>
-    <li>FFLAGS: '{{ submission.fflags|default:'?' }}'</li>
-    <li>MAKEOPTS: '{{ submission.makeopts|default:'?' }}'</li>
-    <li>EMERGE_DEFAULT_OPTS: '{{ submission.emergeopts|default:'?' }}'</li>
-    <li>PORTAGE_RSYNC_EXTRA_OPTS: '{{ submission.syncopts|default:'?' }}'</li>
-    <li>ACCEPT_LICENSE: '{{ submission.acceptlicense|default:'?' }}'</li>
+    <li>CFLAGS: '{{ submission.cflags|default_if_none:'?' }}'</li>
+    <li>CXXFLAGS: '{{ submission.cxxflags|default_if_none:'?' }}'</li>
+    <li>LDFLAGS: '{{ submission.ldflags|default_if_none:'?' }}'</li>
+    <li>FFLAGS: '{{ submission.fflags|default_if_none:'?' }}'</li>
+    <li>MAKEOPTS: '{{ submission.makeopts|default_if_none:'?' }}'</li>
+    <li>EMERGE_DEFAULT_OPTS: '{{ submission.emergeopts|default_if_none:'?' }}'</li>
+    <li>PORTAGE_RSYNC_EXTRA_OPTS: '{{ submission.syncopts|default_if_none:'?' }}'</li>
+    <li>ACCEPT_LICENSE: '{{ submission.acceptlicense|default_if_none:'?' }}'</li>
 
     <li>FEATUREs:</li>
     <ul>
@@ -37,7 +33,7 @@
         {% endif %}
     </ul>
 
-    <li>SYNC: {{ submission.sync|default:'?' }}.</li>
+    <li>SYNC: {{ submission.sync|default_if_none:'?' }}.</li>
     <li>Mirrors:</li>
     <ul>
         {% if submission.mirrors.count %}
@@ -48,8 +44,8 @@
             <li>None or not reported.</li>
         {% endif %}
     </ul>
-    <li>Last tree synchronisation: {{ submission.lastsync|default:'?' }}.</li>
-    <li>Tree age: {{ submission.tree_age|default:'?' }} seconds.</li>
+    <li>Last tree synchronisation: {{ submission.lastsync|default_if_none:'?' }}.</li>
+    <li>Tree age: {{ submission.tree_age|default_if_none:'?' }} seconds.</li>
 
     <li>USE:</li>
     <ul>
