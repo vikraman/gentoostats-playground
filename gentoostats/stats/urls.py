@@ -147,7 +147,7 @@ urlpatterns = patterns('gentoostats.stats.views',
        , name='submission_stats_url'
     ),
 
-    url( r'^submission/(?P<submission>\S+)/'
+    url( r'^submission/(?P<id>\d+)/'
        , 'submission_details'
        , name='submission_details_url'
     ),

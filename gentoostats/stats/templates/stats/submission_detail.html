@@ -1,0 +1,9 @@
+{% extends "stats/base.html" %}
+{% load url from future %}
+
+{% block title %}Detailed Submission Statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    <h1>Detailed Submission Statistics for submission #{{ submission.id }}</h1>
+    {% include 'stats/submission_simple.html' with submission=submission %}
+{% endblock content %}

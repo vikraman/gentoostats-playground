@@ -8,7 +8,7 @@ from datetime import datetime
 
 from portage.dep import Atom as PortageAtom
 from portage.exception import InvalidAtom
-from portage._sets import SETPREFIX
+from portage._sets import SETPREFIX as SET_PREFIX
 
 from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
@@ -351,8 +351,8 @@ def process_submission(request):
 
                 for entry in entries:
                     try:
-                        if entry.startswith(SETPREFIX):
-                            subset_name = entry[len(SETPREFIX):]
+                        if entry.startswith(SET_PREFIX):
+                            subset_name = entry[len(SET_PREFIX):]
 
                             subset, _ = AtomSet.objects.get_or_create(
                                 name  = subset_name,

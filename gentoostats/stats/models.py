@@ -1,11 +1,11 @@
+from portage.dep import Atom as PortageAtom
+from portage.exception import InvalidAtom
+from portage._sets import SETPREFIX as SET_PREFIX
+
 from django.db import models
 from django.db.models import Max, Count
 from django.core.validators import RegexValidator, URLValidator, validate_email
 from django.core.exceptions import ValidationError
-
-from portage.dep import Atom as PortageAtom
-from portage.exception import InvalidAtom
-from portage._sets import SETPREFIX
 
 # I have tried being consistent with the names defined here:
 # http://devmanual.gentoo.org/ebuild-writing/variables/index.html
@@ -143,6 +143,8 @@ class Package(AtomABC):
                           , 'repository'
         )
 
+        ordering = ['category', 'package_name', 'version', 'slot']
+
     def __unicode__(self):
         slot       = ":%s"  % (self.slot)       if self.slot                            else ''
         repository = "::%s" % (self.repository) if self.repository != DEFAULT_REPO_NAME else ''
@@ -211,6 +213,8 @@ class Atom(AtomABC):
                           , 'full_atom'
                           , 'operator'
         )
+
+        ordering = ['category', 'package_name', 'version', 'slot']
 
     def __unicode__(self):
         return self.full_atom
@@ -344,7 +348,7 @@ class Host(models.Model):
 
     @property
     def submission_history(self):
-        return self.submissions.order_by('datetime').values_list('datetime', 'protocol')
+        return self.submissions.order_by('datetime').values_list('id', 'datetime', 'protocol')
 
 feature_validator = RegexValidator(r'^\S+$')
 class Feature(models.Model):
@@ -516,7 +520,7 @@ class AtomSet(models.Model):
     #         (self.name, self.atoms.count(), self.subsets.count(), self.owner)
 
     def __unicode__(self):
-        return "%s%s" % (SETPREFIX, self.name)
+        return "%s%s" % (SET_PREFIX, self.name)
 
 class SubmissionManager(models.Manager):
     use_for_related_fields = True
@@ -575,11 +579,10 @@ class Submission(models.Model):
     # make.conf:
     makeconf = models.TextField(blank=True, null=True)
 
-    # cc flags, c++ flags, ld flags, cpp flags, and fortran flags:
+    # cc flags, c++ flags, ld flags, and fortran flags:
     cflags   = models.CharField(blank=True, null=True, max_length=127)
     cxxflags = models.CharField(blank=True, null=True, max_length=127)
     ldflags  = models.CharField(blank=True, null=True, max_length=127)
-    cppflags = models.CharField(blank=True, null=True, max_length=127)
     fflags   = models.CharField(blank=True, null=True, max_length=127)
 
     # Portage features (enabled in make.conf):
@@ -597,11 +600,17 @@ class Submission(models.Model):
     installed_packages = models.ManyToManyField(Package, blank=True, related_name='submissions', through=Installation)
     reported_sets      = models.ManyToManyField(AtomSet, blank=True, related_name='submissions')
 
-    # misc. make.conf variables:
-    makeopts      = models.CharField(blank=True, null=True, max_length=127) # MAKEOPTS
-    emergeopts    = models.CharField(blank=True, null=True, max_length=255) # EMERGE_DEFAULT_OPTS
-    syncopts      = models.CharField(blank=True, null=True, max_length=255) # PORTAGE_RSYNC_EXTRA_OPTS
-    acceptlicense = models.CharField(blank=True, null=True, max_length=255) # ACCEPT_LICENSE
+    # MAKEOPTS:
+    makeopts = models.CharField(blank=True, null=True, max_length=127)
+
+    # EMERGE_DEFAULT_OPTS:
+    emergeopts = models.CharField(blank=True, null=True, max_length=255)
+
+    # PORTAGE_RSYNC_EXTRA_OPTS:
+    syncopts = models.CharField(blank=True, null=True, max_length=255)
+
+    # ACCEPT_LICENSE:
+    acceptlicense = models.CharField(blank=True, null=True, max_length=255)
 
     objects = SubmissionManager()
 

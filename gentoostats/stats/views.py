@@ -1,11 +1,26 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page, cache_control
 from django.core.urlresolvers import reverse
+from django.views.generic import ListView, DetailView
 from django.db.models import Min, Max, Count
 from django.shortcuts import render, redirect, \
                              get_object_or_404, get_list_or_404
 
 from gentoostats.stats.models import *
+
+class ImprovedDetailView(DetailView):
+    extra_context = dict()
+    def get_context_data(self, **kwargs):
+        context = super(ImprovedDetailView, self).get_context_data(**kwargs)
+        context.update(self.extra_context)
+        return context
+
+class ImprovedListView(ListView):
+    extra_context = dict()
+    def get_context_data(self, **kwargs):
+        context = super(ImprovedListView, self).get_context_data(**kwargs)
+        context.update(self.extra_context)
+        return context
 
 @cache_control(public=True)
 @cache_page(1 * 60)
@@ -280,14 +295,16 @@ def submission_stats(request):
 
     return render(request, 'stats/not_implemented.html')
 
-@cache_control(private=True)
-@cache_page(1 * 60)
-def submission_details(request, submission):
-    """
-    TODO: add a description.
-    """
+class SubmissionDetailView(ImprovedDetailView):
+    context_object_name = 'submission'
+    queryset = Submission.objects.select_related()
+    pk_url_kwarg = 'id'
 
-    return render(request, 'stats/not_implemented.html')
+submission_details = cache_control(private=True)(
+    cache_page(1 * 60)(
+        SubmissionDetailView.as_view()
+    )
+)
 
 @cache_control(public=True)
 @cache_page(1 * 60)

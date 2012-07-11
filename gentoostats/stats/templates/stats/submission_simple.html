@@ -1,0 +1,98 @@
+{% load url from future %}
+<ul>
+    <li>Received on: {{ submission.datetime }}.</li>
+    <li>Host: <a href="{{ submission.host.get_absolute_url }}">{{ submission.host }} ({{ submission.ip_addr }})</a></li>
+    <li>Protocol: {{ submission.protocol }}.</li>
+
+    <li>Profile: '{{ submission.profile }}'.</li>
+    <li>ARCH: '{{ submission.arch }}'.</li>
+    <li>CHOST: '{{ submission.chost }}'.</li>
+    <li>CTARGET: '{{ submission.ctarget }}'.</li>
+    <li>Platform: '{{ submission.platform }}'.</li>
+    <li>LANG: '{{ submission.lang }}'.</li>
+
+    {% if submission.makeconf %}
+        <li>Makeconf: yes.</li>
+    {% else %}
+        <li>Makeconf: no.</li>
+    {% endif %}
+
+    <li>CFLAGS: '{{ submission.cflags|default:'?' }}'</li>
+    <li>CXXFLAGS: '{{ submission.cxxflags|default:'?' }}'</li>
+    <li>LDFLAGS: '{{ submission.ldflags|default:'?' }}'</li>
+    <li>FFLAGS: '{{ submission.fflags|default:'?' }}'</li>
+    <li>MAKEOPTS: '{{ submission.makeopts|default:'?' }}'</li>
+    <li>EMERGE_DEFAULT_OPTS: '{{ submission.emergeopts|default:'?' }}'</li>
+    <li>PORTAGE_RSYNC_EXTRA_OPTS: '{{ submission.syncopts|default:'?' }}'</li>
+    <li>ACCEPT_LICENSE: '{{ submission.acceptlicense|default:'?' }}'</li>
+
+    <li>FEATUREs:</li>
+    <ul>
+        {% if submission.features.count %}
+            {% for feature in submission.features.all %}
+                <li><a href="{{ feature.get_absolute_url }}">{{ feature }}</a></li>
+            {% endfor %}
+        {% else %}
+            <li>None or not reported.</li>
+        {% endif %}
+    </ul>
+
+    <li>SYNC: {{ submission.sync|default:'?' }}.</li>
+    <li>Mirrors:</li>
+    <ul>
+        {% if submission.mirrors.count %}
+            {% for mirror in submission.mirrors.all %}
+                <li><a href="{{ mirror.get_absolute_url }}">{{ mirror }}</a></li>
+            {% endfor %}
+        {% else %}
+            <li>None or not reported.</li>
+        {% endif %}
+    </ul>
+    <li>Last tree synchronisation: {{ submission.lastsync|default:'?' }}.</li>
+    <li>Tree age: {{ submission.tree_age|default:'?' }} seconds.</li>
+
+    <li>USE:</li>
+    <ul>
+        {% if submission.global_use.count %}
+            {% for flag in submission.global_use.all %}
+                <li><a href="{{ flag.get_absolute_url }}">{{ flag }}</a></li>
+            {% endfor %}
+        {% else %}
+            <li>None or not reported.</li>
+        {% endif %}
+    </ul>
+
+    <li>ACCEPT_KEYWORDS:</li>
+    <ul>
+        {% if submission.global_keywords.count %}
+            {% for keyword in submission.global_keywords.all %}
+                <li><a href="{{ keyword.get_absolute_url }}">{{ keyword }}</a></li>
+            {% endfor %}
+        {% else %}
+            <li>None or not reported.</li>
+        {% endif %}
+    </ul>
+
+    <li>Installed packages: {{ submission.installed_packages.count }}</li>
+
+    <li>Reported sets:</li>
+    <ul>
+        {% if submission.reported_sets.count %}
+            <ul>
+            {% for set in submission.reported_sets.all %}
+                <li>{{ set }}</li>
+                <ul>
+                    {% for subset in set.subsets.all %}
+                        <li>{{ subset }} (subset)</li>
+                    {% endfor %}
+                    {% for atom in set.atoms.all %}
+                        <li>{{ atom }}</li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <li>None or not reported.</li>
+        {% endif %}
+    </ul>
+</ul>
