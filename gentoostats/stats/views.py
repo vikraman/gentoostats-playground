@@ -98,7 +98,7 @@ def host_details(request, host_id):
     # Accept UUIDs with no hyphens and/or with capital letters, but still
     # redirect the user to the 'proper' URL:
     host_id_new = add_hyphens_to_uuid(host_id)
-    host_id_new = host_id.lower()
+    host_id_new = host_id_new.lower()
 
     if host_id != host_id_new:
         return redirect( 'stats:host_details_url'
