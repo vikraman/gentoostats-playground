@@ -1,0 +1,18 @@
+{% extends "stats/base.html" %}
+{% load url from future %}
+
+{% block title %}Host Search | Gentoostats {% endblock title %}
+
+{% block content %}
+    <h1>Host Search</h1>
+
+    {% if form.errors %}
+        <p class='error'>Please correct the error{{ form.errors|pluralize }} below.</p>
+    {% endif %}
+
+    <form action="" method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Search">
+    </form>
+{% endblock content %}

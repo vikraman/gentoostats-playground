@@ -6,9 +6,15 @@ from django.db.models import Min, Max, Count
 from django.shortcuts import render, redirect, \
                              get_object_or_404, get_list_or_404
 
-from gentoostats.stats.models import *
+from .util import add_hyphens_to_uuid
+from .forms import *
+from .models import *
 
 class ImprovedDetailView(DetailView):
+    """
+    A DetailView subclass that respects 'extra_context'.
+    """
+
     extra_context = dict()
     def get_context_data(self, **kwargs):
         context = super(ImprovedDetailView, self).get_context_data(**kwargs)
@@ -16,6 +22,10 @@ class ImprovedDetailView(DetailView):
         return context
 
 class ImprovedListView(ListView):
+    """
+    A ListView subclass that respects 'extra_context'.
+    """
+
     extra_context = dict()
     def get_context_data(self, **kwargs):
         context = super(ImprovedListView, self).get_context_data(**kwargs)
@@ -25,6 +35,10 @@ class ImprovedListView(ListView):
 @cache_control(public=True)
 @cache_page(1 * 60)
 def index(request):
+    """
+    Index page of Gentoostats.
+    """
+
     return render(request, 'stats/index.html')
 
 @cache_control(public=True)
@@ -55,29 +69,26 @@ def overall_stats(request):
 @cache_page(24 * 60 * 60)
 def host_search(request):
     """
-    TODO: add a description.
+    Search for a host by its full UUID.
     """
 
-    return render(request, 'stats/not_implemented.html')
-
-def add_hyphens_to_uuid(uuid):
-    """
-    Try adding 4 hyphens to an UUID if its length after all existing hypens are
-    removed is 32. If that's not the case return the original UUID.
-
-    UUID format: 8-4-4-4-12 groups of hex.
-    """
-
-    uuid_copy = uuid.replace('-', '')
-    if len(uuid_copy) == 32:
-        uuid = "%s-%s-%s-%s-%s" % ( uuid_copy[:8]
-                                  , uuid_copy[8:12]
-                                  , uuid_copy[12:16]
-                                  , uuid_copy[16:20]
-                                  , uuid_copy[20:]
+    if request.method == 'POST':
+        form = HostSearchForm(request.POST)
+        if form.is_valid():
+            return redirect( 'stats:host_details_url'
+                           , host_id   = form.cleaned_data['host_id']
+                           , permanent = False
+            )
+    else:
+        form = HostSearchForm(
+            # initial = dict(host_id='Enter UUID'),
         )
 
-    return uuid
+    context = dict(
+        form=form,
+    )
+
+    return render(request, 'stats/host_search.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
