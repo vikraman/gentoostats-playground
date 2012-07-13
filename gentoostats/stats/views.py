@@ -182,11 +182,12 @@ def feature_stats(request):
 
     # The following is pretty ugly, but works.
     used_q          = Q(submissions__in=Submission.objects.latest_submission_ids)
-    used_features   = Feature.objects.order_by().filter(used_q).annotate(num_hosts_fast=Count('submissions'))
-    unused_features = Feature.objects.order_by().filter(~used_q).annotate(num_hosts_fast=Count('submissions'))
+    used_features   = Feature.objects.filter(used_q).annotate(num_hosts_fast=Count('submissions')).order_by('name')
+    unused_features = Feature.objects.filter(~used_q).order_by('name')
 
     context = dict(
-        features = (used_features | unused_features).order_by('name')
+        features = used_features,
+        unused_features = unused_features,
     )
 
     return render(request, 'stats/feature_stats.html', context)
