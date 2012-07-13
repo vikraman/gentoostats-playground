@@ -8,7 +8,7 @@
 
     {% if submissions.count %}
         <ul>
-        {% for submission in submissions|slice:"10" reversed %}
+        {% for submission in submissions|slice:":10" reversed %}
             <li><a href="{{ submission.get_absolute_url }}">[{{ submission.datetime|date:"Y.m.d H:i" }}] ARCH: {{ submission.arch|default:"unknown" }}, ACCEPT_KEYWORDS: {{ submission.global_keywords.all|join:", " }}</a></li>
         {% endfor %}
         </ul>

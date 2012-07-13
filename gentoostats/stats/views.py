@@ -300,18 +300,18 @@ def lang_details(request, lang):
 # Submissions: #{{{
 class SubmissionListView(ImprovedListView):
     context_object_name = 'submissions'
-    queryset = Submission.objects.select_related()
+    queryset = Submission.objects.select_related().order_by('-datetime')
 
 submission_stats = \
     cache_control(public=True) (
-        cache_page(1 * 60) (
+        cache_page(1) (
             SubmissionListView.as_view()
         )
     )
 
 class SubmissionDetailView(ImprovedDetailView):
     context_object_name = 'submission'
-    queryset = Submission.objects.select_related().order_by('-datetime')
+    queryset = Submission.objects.select_related()
     pk_url_kwarg = 'id'
 
 submission_details = \
