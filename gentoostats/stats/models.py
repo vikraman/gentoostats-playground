@@ -335,7 +335,7 @@ class Host(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('stats:host_details_url', (), {'id': self.id})
+        return ('stats:host_details_url', (), {'host_id': self.id})
 
     @property
     def latest_submission(self):
