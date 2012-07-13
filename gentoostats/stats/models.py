@@ -526,17 +526,23 @@ class SubmissionManager(models.Manager):
     use_for_related_fields = True
 
     @property
+    def latest_submission_ids(self):
+        """
+        Return the latest submission IDs of each host (ordered by PK).
+        """
+
+        # The following will result in the following query:
+        #     SELECT MAX("stats_submission"."id") AS "latest_submission_id" FROM
+        #     "stats_submission" GROUP BY "stats_submission"."host_id"
+        return Submission.objects.order_by().values('host').annotate(latest_submission_id=Max('id')).values_list('latest_submission_id', flat=True)
+
+    @property
     def latest_submissions(self):
         """
         Return the latest submissions of each host (ordered by PK).
         """
 
-        latest_submission_ids = Submission.objects.order_by().values('host').annotate(latest_submission_id=Max('id')).values_list('latest_submission_id', flat=True)
-        # This will result in the following query:
-        #     SELECT MAX("stats_submission"."id") AS "latest_submission_id" FROM
-        #     "stats_submission" GROUP BY "stats_submission"."host_id"
-
-        return Submission.objects.filter(pk__in=latest_submission_ids)
+        return Submission.objects.filter(pk__in=self.latest_submission_ids)
 
 class Submission(models.Model):
     raw_request_filename = models.CharField(max_length=127, unique=True)

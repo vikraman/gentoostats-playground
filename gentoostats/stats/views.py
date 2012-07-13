@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page, cache_control
 from django.core.urlresolvers import reverse
 from django.views.generic import ListView, DetailView
-from django.db.models import Min, Max, Count
+from django.db.models import Q, Min, Max, Count
 from django.shortcuts import render, redirect, \
                              get_object_or_404, get_list_or_404
 
@@ -180,8 +180,13 @@ def feature_stats(request):
     Show statistics about the known FEATUREs.
     """
 
+    # The following is pretty ugly, but works.
+    used_q          = Q(submissions__in=Submission.objects.latest_submission_ids)
+    used_features   = Feature.objects.order_by().filter(used_q).annotate(num_hosts_fast=Count('submissions'))
+    unused_features = Feature.objects.order_by().filter(~used_q).annotate(num_hosts_fast=Count('submissions'))
+
     context = dict(
-        features = Feature.objects.all(),
+        features = (used_features | unused_features).order_by('name')
     )
 
     return render(request, 'stats/feature_stats.html', context)
