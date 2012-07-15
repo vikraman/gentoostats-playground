@@ -1,0 +1,27 @@
+{% extends "stats/base.html" %}
+{% load url from future %}
+
+{% block title %}Host Statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    <h1>Host Statistics</h1>
+
+    {% if hosts %}
+        <p>Total hosts: {{ hosts.count }}</p>
+        {% if country_stats %}
+            <p>Country statistics:</p>
+            <table border="1">
+                <th>Country</th>
+                <th>Hosts</th>
+                {% for country, num_hosts in country_stats %}
+                    <tr>
+                        <td>{{ country|default_if_none:"Unknown" }}</td>
+                        <td>{{ num_hosts }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    {% else %}
+        <h1>No submissions (and hosts) are present. Sorry.</h1>
+    {% endif %}
+{% endblock content %}

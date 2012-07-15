@@ -11,8 +11,9 @@ from portage.exception import InvalidAtom
 from portage._sets import SETPREFIX as SET_PREFIX
 
 from django.db import IntegrityError, transaction
-from django.core.exceptions import ValidationError
 from django.http import HttpResponse, HttpResponseBadRequest
+from django.core.exceptions import ValidationError
+from django.contrib.gis.geoip import GeoIP
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -209,13 +210,17 @@ def process_submission(request):
         sync, _ = SyncServer.objects.get_or_create(url=sync)
         validate_item(sync)
 
+    ip_addr  = request.META['REMOTE_ADDR']
+    fwd_addr = request.META.get('HTTP_X_FORWARDED_FOR') # TODO
+
     submission = Submission.objects.create(
         raw_request_filename = raw_request_filename,
 
         host          = host,
+        country       = GeoIP().country_name(ip_addr),
         email         = data['AUTH'].get('EMAIL'),
-        ip_addr       = request.META['REMOTE_ADDR'],
-        fwd_addr      = request.META.get('HTTP_X_FORWARDED_FOR'), # TODO
+        ip_addr       = ip_addr,
+        fwd_addr      = fwd_addr,
 
         protocol      = protocol,
 

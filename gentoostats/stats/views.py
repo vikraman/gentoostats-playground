@@ -45,7 +45,7 @@ def index(request):
 @cache_page(24 * 60 * 60)
 def about(request):
     """
-    TODO: add a description.
+    Project about page.
     """
 
     return render(request, 'stats/about.html')
@@ -97,7 +97,12 @@ def host_stats(request):
     TODO: add a description.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    context = dict(
+        hosts         = Host.objects.all(),
+        country_stats = Submission.objects.latest_submissions.filter(country__isnull=False).values_list('country').annotate(num_hosts=Count('country')).order_by('country'),
+    )
+
+    return render(request, 'stats/host_stats.html', context)
 
 @cache_control(private=True)
 @cache_page(1 * 60)
@@ -119,7 +124,7 @@ def host_details(request, host_id):
 
     context = dict(
         host = get_object_or_404( Host.objects.select_related('submissions')
-                                , id=host_id
+                                , id = host_id
         ),
     )
 
@@ -134,7 +139,7 @@ def arch_stats(request):
 
     context = dict(
         arch_stats = \
-            Submission.objects.latest_submissions.values_list('arch').annotate(num_hosts=Count('arch')),
+            Submission.objects.latest_submissions.values_list('arch').annotate(num_hosts=Count('arch')).order_by('arch'),
     )
 
     return render(request, 'stats/arch_stats.html', context)

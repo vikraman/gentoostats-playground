@@ -548,6 +548,7 @@ class Submission(models.Model):
     raw_request_filename = models.CharField(max_length=127, unique=True)
 
     host     = models.ForeignKey(Host, related_name='submissions')
+    country  = models.CharField(max_length=127, blank=False, null=True)
     ip_addr  = models.GenericIPAddressField()
     fwd_addr = models.GenericIPAddressField(blank=True, null=True) # X-Forwarded-For
     datetime = models.DateTimeField(auto_now_add=True)
