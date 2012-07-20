@@ -20,6 +20,8 @@ Gentoo systems
     emerge -av >=dev-python/django-1.4         # required
     emerge -av dev-libs/geoip                  # required
 
+    emerge -av dev-python/pytz                 # recommended for production
+
     emerge -av dev-python/south                # optional
     emerge -av dev-python/django-extensions    # optional
 

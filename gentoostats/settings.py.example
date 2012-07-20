@@ -9,6 +9,8 @@ ADMINS = (
 
 INTERNAL_IPS = ('127.0.0.1',)
 
+GEOIP_PATH = "/usr/share/GeoIP/"
+
 MANAGERS = ADMINS
 
 DATABASES = {

@@ -12,6 +12,7 @@ from portage._sets import SETPREFIX as SET_PREFIX
 
 from django.db import IntegrityError, transaction
 from django.http import HttpResponse, HttpResponseBadRequest
+from django.utils.timezone import utc
 from django.core.exceptions import ValidationError
 from django.contrib.gis.geoip import GeoIP
 from django.views.decorators.csrf import csrf_exempt
@@ -146,9 +147,12 @@ def process_submission(request):
         try:
             # FIXME: I've hardcoded the time zone here.
             # This is why: http://bugs.python.org/issue6641 .
-            lastsync = datetime.fromtimestamp(time.mktime(
-                time.strptime(lastsync, "%a, %d %b %Y %H:%M:%S +0000")
-            ))
+            lastsync = datetime.utcfromtimestamp(
+                time.mktime(
+                    time.strptime(lastsync, "%a, %d %b %Y %H:%M:%S +0000")
+                )
+            )
+            lastsync = lastsync.replace(tzinfo=utc)
         except ValueError as e:
             error_message = "Error: Invalid date in LASTSYNC."
             logger.info("process_submission(): " + error_message, exc_info=True)
@@ -298,7 +302,8 @@ def process_submission(request):
                 # Sometimes clients report BUILD_TIME as ''.
                 built_at = None
             else:
-                built_at = datetime.fromtimestamp(float(built_at))
+                built_at = datetime.utcfromtimestamp(float(built_at))
+                built_at = built_at.replace(tzinfo=utc)
 
             build_duration = info.get('BUILD_DURATION')
             if not build_duration:

@@ -1,4 +1,12 @@
+from tastypie.api import Api
+
 from django.conf.urls import patterns, include, url
+
+from .api import *
+
+api = Api(api_name='')
+api.register(HostResource())
+api.register(SubmissionResource())
 
 urlpatterns = patterns('gentoostats.stats.views',
     url( r'^$'
@@ -17,28 +25,18 @@ urlpatterns = patterns('gentoostats.stats.views',
     ),
 
     # Host(s): #{{{
-    url( r'^host_search/$'
+    url( r'^host/$'
        , 'host_search'
        , name='host_search_url'
     ),
 
-    url( r'^host/$'
-       , 'host_stats'
-       , name='host_stats_url'
-    ),
-
-    url( r'^host/(?P<host_id>[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{12})/$'
+    url( r'^(?:host/)(?P<host_id>[\da-fA-F]{8}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{4}-?[\da-fA-F]{12})/$'
        , 'host_details'
        , name='host_details_url'
     ),
     #}}}
 
     # ARCH(es): #{{{
-    url( r'^arch/$'
-       , 'arch_stats'
-       , name='arch_stats_url'
-    ),
-
     url( r'^arch/(?P<arch>\w+)/'
        , 'arch_details'
        , name='arch_details_url'
@@ -46,11 +44,6 @@ urlpatterns = patterns('gentoostats.stats.views',
     #}}}
 
     # FEATURE(s): #{{{
-    url( r'^feature/$'
-       , 'feature_stats'
-       , name='feature_stats_url'
-    ),
-
     url( r'^feature/(?P<feature>\S+)/'
        , 'feature_details'
        , name='feature_details_url'
@@ -58,11 +51,6 @@ urlpatterns = patterns('gentoostats.stats.views',
     #}}}
 
     # Keyword(s): #{{{
-    url( r'^keyword/$'
-       , 'keyword_stats'
-       , name='keyword_stats_url'
-    ),
-
     url( r'^keyword/(?P<keyword>\w+)/'
        , 'keyword_details'
        , name='keyword_details_url'
@@ -106,11 +94,6 @@ urlpatterns = patterns('gentoostats.stats.views',
     #}}}
 
     # Profile(s): #{{{
-    url( r'^profile/$'
-       , 'profile_stats'
-       , name='profile_stats_url'
-    ),
-
     url( r'^profile/(?P<profile>\S+)/'
        , 'profile_details'
        , name='profile_details_url'
@@ -118,11 +101,6 @@ urlpatterns = patterns('gentoostats.stats.views',
     #}}}
 
     # LANG(s): #{{{
-    url( r'^lang/$'
-       , 'lang_stats'
-       , name='lang_stats_url'
-    ),
-
     url( r'^lang/(?P<lang>\S+)/'
        , 'lang_details'
        , name='lang_details_url'
@@ -142,11 +120,6 @@ urlpatterns = patterns('gentoostats.stats.views',
     #}}}
 
     # Submission(s): #{{{
-    url( r'^submission/$'
-       , 'submission_stats'
-       , name='submission_stats_url'
-    ),
-
     url( r'^submission/(?P<id>\d+)/'
        , 'submission_details'
        , name='submission_details_url'
@@ -166,4 +139,8 @@ urlpatterns = patterns('gentoostats.stats.views',
     #}}}
 
     # TODO: /package/
+
+    # API: #{{{
+    url( r'^api', include(api.urls)),
+    #}}}
 )

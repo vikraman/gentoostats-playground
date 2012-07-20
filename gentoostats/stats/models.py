@@ -548,7 +548,7 @@ class Submission(models.Model):
     raw_request_filename = models.CharField(max_length=127, unique=True)
 
     host     = models.ForeignKey(Host, related_name='submissions')
-    country  = models.CharField(max_length=127, blank=False, null=True)
+    country  = models.CharField(max_length=127, blank=True, null=True)
     ip_addr  = models.GenericIPAddressField()
     fwd_addr = models.GenericIPAddressField(blank=True, null=True) # X-Forwarded-For
     datetime = models.DateTimeField(auto_now_add=True)
@@ -596,10 +596,10 @@ class Submission(models.Model):
     features = models.ManyToManyField(Feature, blank=True, related_name='submissions')
 
     # make.conf example: SYNC="rsync://rsync.gentoo.org/gentoo-portage"
-    sync     = models.ForeignKey(SyncServer, blank=True, null=True, related_name='+')
+    sync = models.ForeignKey(SyncServer, blank=True, null=True, related_name='+')
 
     # make.conf example: GENTOO_MIRRORS="http://gentoo.osuosl.org/"
-    mirrors  = models.ManyToManyField(MirrorServer, blank=True, related_name='submissions')
+    mirrors = models.ManyToManyField(MirrorServer, blank=True, related_name='submissions')
 
     global_use      = models.ManyToManyField(UseFlag, blank=True, related_name='submissions')
     global_keywords = models.ManyToManyField(Keyword, blank=True, related_name='submissions')

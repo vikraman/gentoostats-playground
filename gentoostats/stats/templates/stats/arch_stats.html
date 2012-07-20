@@ -4,19 +4,6 @@
 {% block title %}ARCH Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>ARCH Statistics</h1>
-
-    {% if arch_stats %}
-        <table border="1">
-            <th>Arch</th>
-            <th>Hosts</th>
-            {% for arch, num_hosts in arch_stats %}
-                <tr>
-                    <td><a href="{% url 'stats:arch_details_url' arch=arch %}">{{ arch }}</a></td>
-                    <td>{{ num_hosts }}</td>
-                </tr>
-            {% endfor %}
-        </table>
     {% else %}
         <h1>No submissions (and stats) are present. Sorry.</h1>
     {% endif %}

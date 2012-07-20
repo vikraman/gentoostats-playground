@@ -57,10 +57,22 @@ def overall_stats(request):
     Show overall stats for the website.
     """
 
+    latest_submission_q = Q(submissions__in=Submission.objects.latest_submission_ids)
+
+    features = Feature.objects.filter(latest_submission_q).annotate(num_hosts_fast=Count('submissions')).order_by('name')
+    langs    = Lang.objects.filter(latest_submission_q).annotate(num_hosts_fast=Count('submissions')).order_by('name')
+    keywords = Keyword.objects.filter(latest_submission_q).annotate(num_hosts_fast=Count('submissions')).order_by('name')
+
     context = dict(
-        num_hosts          = Host.objects.count(),
-        num_submissions    = Submission.objects.count(),
-        submission_history = Submission.objects.order_by('datetime').values_list('datetime', 'protocol'),
+        hosts         = Host.objects.all(),
+        submissions   = Submission.objects.select_related().order_by('-datetime'),
+        country_stats = Submission.objects.latest_submissions.filter(country__isnull=False).values_list('country').annotate(num_hosts=Count('country')).order_by('country'),
+        arch_stats    = Submission.objects.latest_submissions.values_list('arch').annotate(num_hosts=Count('arch')).order_by('arch'),
+        profile_stats = Submission.objects.latest_submissions.values_list('profile').annotate(num_hosts=Count('profile')).order_by('profile'),
+
+        features = features,
+        langs    = langs,
+        keywords = keywords,
     )
 
     return render(request, 'stats/overall_stats.html', context)
@@ -90,20 +102,6 @@ def host_search(request):
 
     return render(request, 'stats/host_search.html', context)
 
-@cache_control(public=True)
-@cache_page(1 * 60)
-def host_stats(request):
-    """
-    TODO: add a description.
-    """
-
-    context = dict(
-        hosts         = Host.objects.all(),
-        country_stats = Submission.objects.latest_submissions.filter(country__isnull=False).values_list('country').annotate(num_hosts=Count('country')).order_by('country'),
-    )
-
-    return render(request, 'stats/host_stats.html', context)
-
 @cache_control(private=True)
 @cache_page(1 * 60)
 def host_details(request, host_id):
@@ -132,20 +130,6 @@ def host_details(request, host_id):
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def arch_stats(request):
-    """
-    Show statistics about the known arches.
-    """
-
-    context = dict(
-        arch_stats = \
-            Submission.objects.latest_submissions.values_list('arch').annotate(num_hosts=Count('arch')).order_by('arch'),
-    )
-
-    return render(request, 'stats/arch_stats.html', context)
-
-@cache_control(public=True)
-@cache_page(1 * 60)
 def arch_details(request, arch):
     """
     Show more detailed statistics about a specific arch.
@@ -162,40 +146,16 @@ def arch_details(request, arch):
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def keyword_stats(request):
-    """
-    Show statistics about the keywords used when installing packages.
-    """
-
-    return render(request, 'stats/not_implemented.html')
-
-@cache_control(public=True)
-@cache_page(1 * 60)
 def keyword_details(request, keyword):
     """
-    TODO: add a description.
+    Show statistics about a particular keyword (e.g. amd64).
     """
-
-    return render(request, 'stats/not_implemented.html')
-
-@cache_control(public=True)
-@cache_page(1 * 60)
-def feature_stats(request):
-    """
-    Show statistics about the known FEATUREs.
-    """
-
-    # The following is pretty ugly, but works.
-    used_q          = Q(submissions__in=Submission.objects.latest_submission_ids)
-    used_features   = Feature.objects.filter(used_q).annotate(num_hosts_fast=Count('submissions')).order_by('name')
-    unused_features = Feature.objects.filter(~used_q).order_by('name')
 
     context = dict(
-        features = used_features,
-        unused_features = unused_features,
+        keyword = get_object_or_404(Keyword, name=keyword),
     )
 
-    return render(request, 'stats/feature_stats.html', context)
+    return render(request, 'stats/keyword_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
@@ -292,15 +252,6 @@ def category_details(request, category):
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def lang_stats(request):
-    """
-    TODO: add a description.
-    """
-
-    return render(request, 'stats/not_implemented.html')
-
-@cache_control(public=True)
-@cache_page(1 * 60)
 def lang_details(request, lang):
     """
     TODO: add a description.
@@ -309,17 +260,6 @@ def lang_details(request, lang):
     return render(request, 'stats/not_implemented.html')
 
 # Submissions: #{{{
-class SubmissionListView(ImprovedListView):
-    context_object_name = 'submissions'
-    queryset = Submission.objects.select_related().order_by('-datetime')
-
-submission_stats = \
-    cache_control(public=True) (
-        cache_page(1) (
-            SubmissionListView.as_view()
-        )
-    )
-
 class SubmissionDetailView(ImprovedDetailView):
     context_object_name = 'submission'
     queryset = Submission.objects.select_related()
@@ -345,15 +285,6 @@ def useflag_stats(request):
 @cache_control(public=True)
 @cache_page(1 * 60)
 def useflag_details(request, useflag):
-    """
-    TODO: add a description.
-    """
-
-    return render(request, 'stats/not_implemented.html')
-
-@cache_control(public=True)
-@cache_page(1 * 60)
-def profile_stats(request):
     """
     TODO: add a description.
     """
