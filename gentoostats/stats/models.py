@@ -479,25 +479,25 @@ class Keyword(models.Model):
 class Installation(models.Model):
     """
     Package installations on hosts.
+
+    It is expected that each installation is unique to each host, but that may
+    not always hold true.
     """
 
-    package    = models.ForeignKey(Package, db_index=True)
-    submission = models.ForeignKey('Submission')
+    package = models.ForeignKey(Package, related_name='installations')
 
-    # yes, blank must be True
+    # keyword used:
+    keyword = models.ForeignKey(Keyword)
+
     built_at       = models.DateTimeField(blank=True, null=True)
     build_duration = models.IntegerField(blank=True, null=True)
     size           = models.BigIntegerField(blank=True, null=True)
 
     # TODO: better documentation and verification
-    iuse   = models.ManyToManyField(UseFlag, blank=True, related_name='installation_iuse')
-    pkguse = models.ManyToManyField(UseFlag, blank=True, related_name='installation_pkguse')
-    use    = models.ManyToManyField(UseFlag, blank=True, related_name='installation_use')
+    iuse   = models.ManyToManyField(UseFlag, blank=True, related_name='installations_iuse')
+    pkguse = models.ManyToManyField(UseFlag, blank=True, related_name='installations_pkguse')
+    use    = models.ManyToManyField(UseFlag, blank=True, related_name='installations_use')
 
-    # keyword used:
-    keyword = models.ForeignKey(Keyword)
-
-    # TODO:
     def __unicode__(self):
         return "'%s' installed at '%s'" % (self.package, self.built_at)
 
@@ -604,8 +604,17 @@ class Submission(models.Model):
     global_use      = models.ManyToManyField(UseFlag, blank=True, related_name='submissions')
     global_keywords = models.ManyToManyField(Keyword, blank=True, related_name='submissions')
 
-    installed_packages = models.ManyToManyField(Package, blank=True, related_name='submissions', through=Installation)
-    reported_sets      = models.ManyToManyField(AtomSet, blank=True, related_name='submissions')
+    installations = models.ManyToManyField(
+        Installation,
+        blank=True,
+        related_name='submissions',
+    )
+
+    reported_sets = models.ManyToManyField(
+        AtomSet,
+        blank=True,
+        related_name='submissions',
+    )
 
     # MAKEOPTS:
     makeopts = models.CharField(blank=True, null=True, max_length=127)

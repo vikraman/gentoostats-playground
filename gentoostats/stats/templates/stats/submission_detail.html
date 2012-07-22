@@ -6,4 +6,22 @@
 {% block content %}
     <h1>Detailed Submission Statistics for submission #{{ submission.id }}</h1>
     {% include 'stats/submission_simple.html' with submission=submission %}
+
+    <li>Installed packages:</li>
+    {% with installations=submission.installations.select_related.all %}
+        {% if installations %}
+            <ul>
+            {% for installation in installations %}
+                <li>{{ installation.package }}</li>
+                <ul>
+                    <li>USE: {{ installation.use.all }}</li>
+                    <li>IUSE: {{ installation.iuse.all }}</li>
+                    <li>PKGUSE: {{ installation.pkguse.all }}</li>
+                </ul>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <li>None or not reported.</li>
+        {% endif %}
+    {% endwith %}
 {% endblock content %}

@@ -1,8 +1,5 @@
-import os
 import json
 import time
-import pickle
-import random
 import logging
 from datetime import datetime
 
@@ -18,74 +15,13 @@ from django.contrib.gis.geoip import GeoIP
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
+from .util import save_request, FileExistsException, BadRequestException
+from gentoostats.stats.util import validate_item, get_useflag_objects
 from gentoostats.stats.models import *
 
 logger = logging.getLogger(__name__)
 
-PROJECT_DIR = os.path.dirname(__file__)
 CURRENT_PROTOCOL_VERSION = 2
-
-class FileExistsException(Exception): pass
-class BadRequestException(Exception): pass
-
-# This should be defined at the module level:
-class SimpleHttpRequest(object):
-    def __init__(self, request):
-        self.body = request.body
-        self.META = filter( lambda x: isinstance(x[1], basestring)
-                          , request.META.items()
-        )
-
-def save_request(request):
-    """
-    Saves all 'str' or 'unicode' properties of a Django Request object in a
-    file.
-
-    Returns the name of the newly created file.
-
-    Throws FileExistsException if a new file could not be created.
-    """
-
-    ip_addr = request.META['REMOTE_ADDR']
-
-    # We can't serialise the whole object, so we only serialise the strings:
-    request_copy = SimpleHttpRequest(request)
-
-    # current unix timestamp, without microseconds:
-    timestamp = str(int(time.time()))
-
-    # append a random int, just for safety
-    random_int = random.randint(1, 1024)
-
-    file_name = "%s-%s-%s" % (ip_addr, timestamp, random_int)
-    file_path = os.path.join(PROJECT_DIR, 'requests', file_name)
-
-    if os.path.exists(file_path):
-        error_message = "File '%s' already exists" % (file_path)
-
-        logger.error("save_request(): %s" % (error_message))
-        raise FileExistsException(error_message)
-
-    with open(file_path, 'wb') as f:
-        pickle.dump(request_copy, f)
-
-    return file_name
-
-def validate_item(item):
-    """
-    Call .full_clean() on a Django model object.
-
-    If this results in a ValidationError, then a BadRequestException is raised.
-    """
-
-    # TODO: also log information such as type(item).
-
-    try:
-        item.full_clean()
-    except ValidationError as e:
-        error_message = "Error: '%s' failed validation." % str(item)
-        logger.info("validate_item(): " + error_message, exc_info=True)
-        raise BadRequestException(error_message)
 
 @csrf_exempt
 @transaction.commit_on_success
@@ -146,7 +82,7 @@ def process_submission(request):
     if lastsync:
         try:
             # FIXME: I've hardcoded the time zone here.
-            # This is why: http://bugs.python.org/issue6641 .
+            # Here's why: http://bugs.python.org/issue6641 .
             lastsync = datetime.utcfromtimestamp(
                 time.mktime(
                     time.strptime(lastsync, "%a, %d %b %Y %H:%M:%S +0000")
@@ -170,10 +106,9 @@ def process_submission(request):
         logger.info("process_submission(): " + error_message, exc_info=True)
         raise BadRequestException(error_message + " Is your password too long?")
 
-    # AFAIK using bulk_create here is not worth it.
-
     features = data.get('FEATURES')
     if features:
+        # AFAIK using bulk_create here is not worth it.
         features = [
             Feature.objects.get_or_create(name=f)[0] for f in features
         ]
@@ -267,17 +202,20 @@ def process_submission(request):
                                   , allow_wildcard = False
                                   , allow_repo     = True
                 )
-                assert atom.blocker == False and atom.operator == '='
+
+                #assert atom.blocker == False and atom.operator == '='
 
                 category, package_name = atom.cp.split('/')
 
-                category, _ = Category.objects.get_or_create(name=category)
-                category.full_clean()
+                category, created = Category.objects.get_or_create(name=category)
+                if created:
+                    category.full_clean()
 
-                package_name, _ = PackageName.objects.get_or_create(name=package_name)
-                package_name.full_clean()
+                package_name, created = PackageName.objects.get_or_create(name=package_name)
+                if created:
+                    package_name.full_clean()
 
-                package, _ = Package.objects.get_or_create(
+                package, created = Package.objects.get_or_create(
                     category     = category,
                     package_name = package_name,
 
@@ -285,7 +223,8 @@ def process_submission(request):
                     slot         = atom.slot,
                     repository   = atom.repo,
                 )
-                package.full_clean()
+                if created:
+                    package.full_clean()
 
             except (InvalidAtom, ValidationError) as e:
                 error_message = "Error: Atom '%s' failed validation." % package
@@ -294,8 +233,9 @@ def process_submission(request):
 
             keyword = info.get('KEYWORD')
             if keyword:
-                keyword, _ = Keyword.objects.get_or_create(name=keyword)
-                keyword.full_clean()
+                keyword, created = Keyword.objects.get_or_create(name=keyword)
+                if created:
+                    keyword.full_clean()
 
             built_at = info.get('BUILD_TIME')
             if not built_at:
@@ -307,38 +247,26 @@ def process_submission(request):
 
             build_duration = info.get('BUILD_DURATION')
             if not build_duration:
+                # '' -> None
                 build_duration = None
 
             size = info.get('SIZE')
             if not size:
+                # '' -> None
                 size = None
 
-            installation, _ = Installation.objects.get_or_create(
-                package    = package,
-                submission = submission,
-                keyword    = keyword,
+            installation, created = Installation.objects.get_or_create(
+                package = package,
+                keyword = keyword,
 
                 built_at       = built_at,
                 build_duration = build_duration, # TODO
                 size           = size,
             )
 
-            def _get_useflag_objects(useflag_list):
-                if not useflag_list:
-                    return useflag_list
-
-                useflag_list = [
-                    UseFlag.objects.get_or_create(name=u)[0] \
-                    for u in useflag_list
-                ]
-
-                map(validate_item, useflag_list)
-
-                return useflag_list
-
-            iuse   = _get_useflag_objects(info.get('IUSE'))
-            pkguse = _get_useflag_objects(info.get('PKGUSE'))
-            use    = _get_useflag_objects(info.get('USE'))
+            iuse   = get_useflag_objects(info.get('IUSE'))
+            pkguse = get_useflag_objects(info.get('PKGUSE'))
+            use    = get_useflag_objects(info.get('USE'))
 
             if iuse:
                 installation.iuse.add(*iuse)
@@ -347,7 +275,10 @@ def process_submission(request):
             if use:
                 installation.use.add(*use)
 
-            installation.full_clean()
+            if created:
+                installation.full_clean()
+
+            submission.installations.add(installation)
 
     reported_sets = data.get('WORLDSET')
     if reported_sets:
