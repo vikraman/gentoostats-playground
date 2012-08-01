@@ -1,5 +1,6 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load package_helpers %}
 
 {% block title %}Detailed Submission Statistics | Gentoostats {% endblock title %}
 
@@ -12,12 +13,7 @@
         {% if installations %}
             <ul>
             {% for installation in installations %}
-                <li>{{ installation.package }}</li>
-                <ul>
-                    <li>USE: {{ installation.use.all }}</li>
-                    <li>IUSE: {{ installation.iuse.all }}</li>
-                    <li>PKGUSE: {{ installation.pkguse.all }}</li>
-                </ul>
+                <li>{{ installation.package }} [{{ installation|format_use_flags }}] ({{installation.built_at}})</li>
             {% endfor %}
             </ul>
         {% else %}
