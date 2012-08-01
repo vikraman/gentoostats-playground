@@ -498,6 +498,9 @@ class Installation(models.Model):
     pkguse = models.ManyToManyField(UseFlag, blank=True, related_name='installations_pkguse')
     use    = models.ManyToManyField(UseFlag, blank=True, related_name='installations_use')
 
+    class Meta():
+        ordering = ['package', 'built_at']
+
     def __unicode__(self):
         return "'%s' installed at '%s'" % (self.package, self.built_at)
 
