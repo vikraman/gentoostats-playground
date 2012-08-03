@@ -1,0 +1,23 @@
+{% extends "stats/base.html" %}
+{% load url from future %}
+{% load package_helpers %}
+
+{% block title %}Application Statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    <h1>Application Statistics</h1>
+
+    {% for section in stats %}
+        {% for cat, apps in section|split %}
+            <h3>{{ cat }}</h3>
+        {% endfor %}
+    {% endfor %}
+
+    {# for section in stats: #}
+    {#     cat, apps = split_list(section) #}
+    {#     for app in apps: #}
+    {#         name, pkgs = split_list(app) #}
+    {#         for index, pkg in enumerate(pkgs): #}
+    {#             app[index+1] = \ #}
+    {#                 (pkg, fresh_submissions_qs.filter(installations__package__cp="%s" % pkg).count()) #}
+{% endblock content %}

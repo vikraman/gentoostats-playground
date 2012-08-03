@@ -1,14 +1,19 @@
+import datetime
+
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page, cache_control
 from django.core.urlresolvers import reverse
+from django.utils.timezone import utc
 from django.views.generic import ListView, DetailView
 from django.db.models import Q, Min, Max, Count
 from django.shortcuts import render, redirect, \
                              get_object_or_404, get_list_or_404
 
-from .util import add_hyphens_to_uuid
+from .util import split_list, add_hyphens_to_uuid
 from .forms import *
 from .models import *
+
+FRESH_SUBMISSION_MAX_AGE = 30 # in days
 
 class ImprovedDetailView(DetailView):
     """
@@ -267,7 +272,7 @@ class SubmissionDetailView(ImprovedDetailView):
 
 submission_details = \
     cache_control(private=True) (
-        cache_page(1 * 60) (
+        cache_page(24 * 60 * 60) (
             SubmissionDetailView.as_view()
         )
     )
@@ -299,3 +304,115 @@ def profile_details(request, profile):
     """
 
     return render(request, 'stats/not_implemented.html')
+
+@cache_control(public=True)
+@cache_page(5 * 60)
+def app_stats(request, dead=False):
+    stats = [
+        [ 'Browsers'
+        ,   ['Chrome', 'www-client/google-chrome', 'www-client/chromium']
+        ,   ['Firefox', 'www-client/firefox', 'www-client/firefox-bin']
+        ,   ['Opera', 'www-client/opera']
+        ,   ['Epiphany', 'www-client/epiphany']
+        ,   ['Konqueror', 'kde-base/konqueror']
+        ,   ['rekonq', 'www-client/rekonq']
+        ,   ['Conkeror', 'www-client/conkeror']
+        ,   ['Midori', 'www-client/midori']
+        ,   ['Uzbl', 'www-client/uzbl']
+        ],
+
+        [ 'CLI Browsers'
+        ,   ['Wget', 'net-misc/wget']
+        ,   ['cURL', 'net-misc/curl']
+        ,   ['Lynx', 'www-client/lynx']
+        ,   ['Links', 'www-client/links']
+        ,   ['ELinks', 'www-client/elinks']
+        ,   ['W3M', 'www-client/w3m', 'www-client/w3mmee']
+        ],
+
+        [ 'Editors/IDEs'
+        ,   ['Vi/Vim', 'app-editors/vim', 'app-editors/gvim', 'app-editors/nvi', 'app-editors/elvis']
+        ,   ['Emacs', 'app-editors/emacs', 'app-editors/qemacs', 'app-editors/xemacs', 'app-editors/jove']
+        ,   ['Eclipse', 'dev-util/eclipse-sdk']
+        ,   ['Yi', 'app-editors/yi']
+        ,   ['Nano', 'app-editors/nano']
+        ,   ['Gedit', 'app-editors/gedit']
+        ,   ['Kate', 'kde-base/kate']
+        ,   ['Kwrite', 'kde-base/kwrite']
+        ,   ['Ne', 'app-editors/ne']
+        ,   ['Jed', 'app-editors/jed']
+        ,   ['Jedit', 'app-editors/jedit']
+        ,   ['Joe', 'app-editors/joe']
+        ,   ['Ed', 'sys-apps/ed']
+        ,   ['Leafpad', 'app-editors/leafpad']
+        ,   ['Geany', 'dev-util/geany']
+        ],
+
+        [ 'Desktop Environments'
+        ,   ['KDE SC', 'kde-base/kdebase-meta']
+        ,   ['GNOME', 'gnome-base/gnome']
+        ,   ['Xfce', 'xfce-base/xfce4-meta']
+        ,   ['LXDE', 'lxde-base/lxde-meta']
+        #,   ['E17', 'dev-libs/ecore']
+        ],
+
+        [ 'Window Managers'
+        ,   ['Xmonad', 'x11-wm/xmonad']
+        ,   ['Ratpoison', 'x11-wm/ratpoison']
+        ,   ['Openbox', 'x11-wm/openbox']
+        ,   ['Fluxbox', 'x11-wm/fluxbox']
+        ,   ['Enlightenment', 'x11-wm/enlightenment']
+        ,   ['dwm', 'x11-wm/dwm']
+        ,   ['i3', 'x11-wm/i3']
+        ,   ['Compiz', 'x11-wm/compiz', 'x11-wm/compiz-fusion']
+        ,   ['FVWM', 'x11-wm/fvwm']
+        ,   ['Wmii', 'x11-wm/wmii']
+        ,   ['Window Maker', 'x11-wm/windowmaker']
+        ,   ['subtle', 'x11-wm/subtle']
+        ,   ['awesome', 'x11-wm/awesome']
+        ,   ['evilwm', 'x11-wm/evilwm']
+        ,   ['IceWM', 'x11-wm/icewm']
+        ],
+
+        [ 'Shells'
+        ,   ['Bash', 'app-shells/bash']
+        ,   ['Zsh', 'app-shells/zsh']
+        ,   ['Tcsh', 'app-shells/tcsh']
+        ,   ['fish', 'app-shells/fish']
+        ],
+
+        [ 'Web servers'
+        ,   ['Apache', 'www-servers/apache']
+        ,   ['Nginx', 'www-servers/nginx']
+        ,   ['lighttpd', 'www-servers/lighttpd']
+        ],
+
+        [ 'Graphics Drivers'
+        ,   ['Nvidia (proprietary)', 'x11-drivers/nvidia-drivers']
+        ,   ['Nouveau', 'x11-drivers/xf86-video-nouveau']
+        ,   ['fglrx (proprietary)', 'x11-drivers/ati-drivers']
+        ,   ['radeon', 'x11-drivers/xf86-video-ati']
+        ,   ['Intel', 'x11-drivers/xf86-video-intel']
+        ],
+    ]
+
+    delta = datetime.timedelta(days=FRESH_SUBMISSION_MAX_AGE)
+    submission_age = datetime.datetime.utcnow().replace(tzinfo=utc) - delta
+
+    fresh_submissions_qs = Submission.objects.latest_submissions.filter(datetime__gte=submission_age)
+
+    # Turn this: ['Vi/Vim', 'app-editors/vim', 'app-editors/gvim']
+    # into this: ['Vi/Vim', ('app-editors/vim', n), ('app-editors/gvim', n2)]
+    for section in stats:
+        cat, apps = split_list(section)
+        for app in apps:
+            name, pkgs = split_list(app)
+            for index, pkg in enumerate(pkgs):
+                app[index+1] = \
+                    (pkg, fresh_submissions_qs.filter(installations__package__cp="%s" % pkg).count())
+
+    import pprint
+    pprint.pprint(stats)
+
+    #return render(request, 'stats/not_implemented.html')
+    return render(request, 'stats/app_stats.html')

@@ -138,6 +138,13 @@ urlpatterns = patterns('gentoostats.stats.views',
     ),
     #}}}
 
+    # Apps: #{{{
+    url( r'^apps/'
+       , 'app_stats'
+       , name='app_stats_url'
+    ),
+    #}}}
+
     # TODO: /package/
 
     # API: #{{{
