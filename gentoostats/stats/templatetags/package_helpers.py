@@ -59,7 +59,7 @@ def format_use_flags(installation):
                 use_class = 'use-disabled'
 
         result_list.append(
-            '<span class="%s">%s</span>' % (use_class, escape(f))
+            '<span class="use %s">%s</span>' % (use_class, escape(f))
         )
 
     return mark_safe(" ".join(result_list))
