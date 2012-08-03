@@ -135,6 +135,9 @@ class Package(AtomABC):
     # version also holds the revision specified (if there's any)
     version = models.CharField(max_length=31, validators=[version_validator])
 
+    # category + package_name, denormalised and indexed for performance:
+    cp = models.CharField(max_length=95, unique=True, db_index=True)
+
     class Meta:
         unique_together = ( 'category'
                           , 'package_name'
@@ -155,6 +158,10 @@ class Package(AtomABC):
                                  , slot
                                  , repository
         )
+
+    def save(self, *args, **kwargs):
+        self.cp = self.category.name + '/' + self.package_name.name
+        super(Package, self).save(*args, **kwargs)
 
     @models.permalink
     def get_absolute_url(self):
