@@ -21,6 +21,10 @@ def reduce_flag(flag):
         return flag
 
 @register.filter()
+def split(lst):
+    return lst[0], lst[1:]
+
+@register.filter()
 def format_use_flags(installation):
     """Prints USE flags with span information"""
 
