@@ -25,6 +25,19 @@ def split(lst):
     return lst[0], lst[1:]
 
 @register.filter()
+def second(lst):
+    return lst[1]
+
+@register.filter()
+def index(lst, i):
+    return lst[i]
+
+@register.filter()
+def tail(lst):
+    """Short for |slice:'1:'"""
+    return lst[1:]
+
+@register.filter()
 def format_use_flags(installation):
     """Prints USE flags with span information"""
 
