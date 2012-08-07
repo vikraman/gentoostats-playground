@@ -1,4 +1,8 @@
 {% load url from future %}
+
+{% load package_helpers %}
+{% load nav %}
+
 {#{% spaceless %}#}
     <!DOCTYPE html>
     <html lang="en">
@@ -13,19 +17,25 @@
             {% block body %}
                 <div id="header">
                     {% block header %}
+                        <a id="logo" href="{% url 'stats:index_url' %}" title="Home"></a>
                         <ul id="nav">
-                            <li><a href="{% url 'stats:index_url' %}">Home</a></li>
-                            <li><a href="{% url 'stats:about_url' %}">About</a></li>
+                            <li>{% nav_link 'stats:index_url' 'Home' %}<span class="sep">|</span></li>
+                            <li>{% nav_link 'stats:stats_url' 'Stats' %}<span class="sep">|</span></li>
+                            <li>{% nav_link 'stats:faq_url' 'FAQ' %}<span class="sep">|</span></li>
+                            <li>{% nav_link 'stats:about_url' 'About' %}</li>
                         </ul>
                     {% endblock header %}
                 </div>
 
                 <div id="content">
-                    {% block content %}{% endblock content %}
+                    {% block content %}
+                    {% endblock content %}
                 </div>
 
                 <div id="footer">
-                    {% block footer %}{% endblock footer %}
+                    {% block footer %}
+                        <p>Gentoostats is an official Gentoo project.</p>
+                    {% endblock footer %}
                 </div>
             {% endblock body %}
         </body>
