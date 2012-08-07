@@ -48,12 +48,30 @@ def index(request):
 
 @cache_control(public=True)
 @cache_page(24 * 60 * 60)
+def faq(request):
+    """
+    F.A.Q page.
+    """
+
+    return render(request, 'stats/not_implemented.html')
+
+@cache_control(public=True)
+@cache_page(24 * 60 * 60)
 def about(request):
     """
     Project about page.
     """
 
     return render(request, 'stats/about.html')
+
+@cache_control(public=True)
+@cache_page(24 * 60 * 60)
+def stats(request):
+    """
+    Stats index page.
+    """
+
+    return render(request, 'stats/stats_index.html')
 
 @cache_control(public=True)
 @cache_page(1 * 60)
@@ -306,7 +324,7 @@ def profile_details(request, profile):
     return render(request, 'stats/not_implemented.html')
 
 @cache_control(public=True)
-@cache_page(5 * 60)
+@cache_page(0)
 def app_stats(request, dead=False):
     stats = [
         [ 'Browsers'

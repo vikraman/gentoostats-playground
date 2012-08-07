@@ -12,17 +12,10 @@ urlpatterns = patterns('',
          )
     ),
 
-    url( r'^stats/'
+    url( r'^'
        , include( 'gentoostats.stats.urls'
                 , namespace = 'stats'
                 , app_name  = 'stats'
-         )
-    ),
-
-    url( r'^'
-       , include( 'gentoostats.main.urls'
-                , namespace = 'main'
-                , app_name  = 'main'
          )
     ),
 )
