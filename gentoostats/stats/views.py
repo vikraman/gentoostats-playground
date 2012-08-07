@@ -420,17 +420,21 @@ def app_stats(request, dead=False):
     fresh_submissions_qs = Submission.objects.latest_submissions.filter(datetime__gte=submission_age)
 
     # Turn this: ['Vi/Vim', 'app-editors/vim', 'app-editors/gvim']
-    # into this: ['Vi/Vim', ('app-editors/vim', n), ('app-editors/gvim', n2)]
+    # into this: [('Vi/Vim', n+n2), ('app-editors/vim', n), ('app-editors/gvim', n2)]
     for section in stats:
         cat, apps = split_list(section)
         for app in apps:
+            num_total = 0
             name, pkgs = split_list(app)
             for index, pkg in enumerate(pkgs):
-                app[index+1] = \
-                    (pkg, fresh_submissions_qs.filter(installations__package__cp="%s" % pkg).count())
+                num = fresh_submissions_qs.filter(installations__package__cp="%s" % pkg).count()
+                num_total += num
+                app[index+1] = (pkg, num)
+            app[0] = (name, num_total)
 
-    import pprint
-    pprint.pprint(stats)
+    context = dict(
+        dead  = dead,
+        stats = stats,
+    )
 
-    #return render(request, 'stats/not_implemented.html')
-    return render(request, 'stats/app_stats.html')
+    return render(request, 'stats/app_stats.html', context)
