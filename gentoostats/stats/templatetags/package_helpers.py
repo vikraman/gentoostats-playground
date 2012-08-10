@@ -1,3 +1,5 @@
+from __future__ import division
+
 from django import template
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
@@ -36,6 +38,10 @@ def index(lst, i):
 def tail(lst):
     """Short for |slice:'1:'"""
     return lst[1:]
+
+@register.filter()
+def divide(a, b):
+    return round(100*a/b)
 
 @register.filter()
 def format_use_flags(installation):
