@@ -418,12 +418,14 @@ def app_stats(request, dead=False):
     submission_age = datetime.datetime.utcnow().replace(tzinfo=utc) - delta
 
     fresh_submissions_qs = Submission.objects.latest_submissions.filter(datetime__gte=submission_age)
+    num_hosts = fresh_submissions_qs.count()
 
     # Turn this: ['Vi/Vim', 'app-editors/vim', 'app-editors/gvim']
     # into this: [('Vi/Vim', n+n2), ('app-editors/vim', n), ('app-editors/gvim', n2)]
     for section in stats:
         cat, apps = split_list(section)
         for app in apps:
+            # num_total is broken!
             num_total = 0
             name, pkgs = split_list(app)
             for index, pkg in enumerate(pkgs):
@@ -433,8 +435,9 @@ def app_stats(request, dead=False):
             app[0] = (name, num_total)
 
     context = dict(
-        dead  = dead,
-        stats = stats,
+        num_hosts = num_hosts,
+        dead      = dead,
+        stats     = stats,
     )
 
     return render(request, 'stats/app_stats.html', context)
