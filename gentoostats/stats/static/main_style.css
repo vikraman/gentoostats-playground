@@ -141,6 +141,10 @@ ul#nav li a {
     /* webkit-radial-gradient(0% 100%, circle cover, rgba(0, 0, 0, 0.078), transparent 80px, transparent 100%); */
 }
 
+svg.stats {
+	padding-bottom: 10px;
+}
+
 .use-selected { color: green; }
 .use-invalid { color: orange; }
 .use-enabled { color: darkgreen; }

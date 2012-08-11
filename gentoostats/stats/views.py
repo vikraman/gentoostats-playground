@@ -1,3 +1,7 @@
+from __future__ import division
+
+import json
+import operator
 import datetime
 
 from django.contrib.auth.decorators import login_required
@@ -420,24 +424,36 @@ def app_stats(request, dead=False):
     fresh_submissions_qs = Submission.objects.latest_submissions.filter(datetime__gte=submission_age)
     num_hosts = fresh_submissions_qs.count()
 
-    # Turn this: ['Vi/Vim', 'app-editors/vim', 'app-editors/gvim']
-    # into this: [('Vi/Vim', n+n2), ('app-editors/vim', n), ('app-editors/gvim', n2)]
+    def percentify(n):
+        # TODO: uncomment this in production.
+        # return round(100 * n / num_hosts)
+
+        import random
+        return random.sample(range(0, 101),  1)[0]
+
+    # Turn this: ['Vi/Vim', 'app-editors/vim', 'app-editors/gvim', ...]
+    # into this: [('Vi/Vim', nT), ('app-editors/vim', n1), ('app-editors/gvim', n2), ...]
+    # 'nT' is the total percentage of hosts with this app, calculated by
+    # chaining Q objects. n1, n2, etc. are also percentages.
     for section in stats:
         cat, apps = split_list(section)
         for app in apps:
-            # num_total is broken!
-            num_total = 0
             name, pkgs = split_list(app)
+            q_list = []
+
             for index, pkg in enumerate(pkgs):
-                num = fresh_submissions_qs.filter(installations__package__cp="%s" % pkg).count()
-                num_total += num
-                app[index+1] = (pkg, num)
-            app[0] = (name, num_total)
+                q_list.append(Q(installations__package__cp=pkg))
+
+                num = fresh_submissions_qs.filter(installations__package__cp=pkg).count()
+                app[index+1] = (pkg, percentify(num))
+
+            num_total = fresh_submissions_qs.filter(reduce(operator.or_, q_list)).distinct().count()
+            app[0] = (name, percentify(num_total))
 
     context = dict(
         num_hosts = num_hosts,
         dead      = dead,
-        stats     = stats,
+        stats     = json.dumps(stats),
     )
 
     return render(request, 'stats/app_stats.html', context)

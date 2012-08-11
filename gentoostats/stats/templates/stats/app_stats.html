@@ -8,69 +8,68 @@
     {{ block.super }}
 
     <script type="text/javascript">
-    window.onload = function() {
-        var data = [];
-        for (i = 0; i < 10; i++) {
-                data.push(Math.floor(100 * Math.random()));
+        var stats = {{ stats|safe }};
+
+        function genChart(data) {
+            var chartWidth = $("#content").width();
+
+            function filterDead(data) {
+                return data.filter(function(e) { return e[0][1] >= 1; });
+            }
+
+            data = filterDead(data);
+
+            var chart = d3.select("#content")
+                .append("svg")
+                    .attr("class", "stats")
+                    .attr("width", chartWidth)
+                    .attr("height", data.length * 25);
+
+            // Draw the application names:
+            var namesData = data.map(function(e) { return e[0][0]; });
+            var names = chart.selectAll("text")
+                .data(namesData)
+                .enter()
+                .append("text")
+                    .attr("x", 0)
+                    .attr("y", function(d, i) { return 25 * i + 20; } )
+                    .attr("width", 150)
+                    .attr("height", 20)
+                    .style("font-size", "20px")
+                    .style("text-anchor", "right")
+                    .text(function(d) { return d; });
+
+            // Draw the bars:
+            var barsData = data.map(function(e) { return e[0][1]; });
+            var bars = chart.selectAll("rect")
+                .data(barsData)
+                .enter()
+                .append("rect")
+                    .attr("x", 200)
+                    .attr("y", function(d, i) { return 25 * i; } )
+                    .attr("width", 0)
+                    .attr("height", "20")
+                    .attr("stroke", "none") // no borders
+                    .attr("fill", "#07da19");
+
+            var maxBarWidth = chartWidth - 200;
+            barWidthFunction = d3.scale.linear()
+                .domain([0, 100])
+                .range(["0px", maxBarWidth + "px"]);
+
+            // And make them grow:
+            var visibleBars = chart.selectAll("rect")
+                .transition().duration(1500).delay(200)
+                .attr("width", function(d) {console.log(d); return barWidthFunction(d);})
+                .attr("fill", "rgb(102,73,231)");
         }
 
-        var maxWidth = $("div.stats_table").width();
-
-        var chart = d3.select("div.stats_table")
-            .append("svg")
-                .attr("width", maxWidth)
-                .attr("height", data.length * 25);
-
-        var selection = chart.selectAll("whatev")
-            .data(data)
-            .enter();
-
-        // Add the item name:
-        var names = selection
-            .append("text")
-                .attr("x", 0)
-                .attr("y", function(d, i) { return (25 * i) + 20; } )
-                .attr("width", 150)
-                .attr("height", 20)
-                .style("font-size", "20px")
-                .style("text-anchor", "right")
-                .text("Hi there");
-
-        maxNameWidth = d3.max($("text").map(function(){return $(this).width();}).get())
-
-        // Add the item bar:
-        var bars = selection
-            .append("rect")
-                .attr("x", 200)
-                .attr("y", function(d, i) { return 25 * i; } )
-                .attr("width", 0)
-                .attr("height", "20")
-                .attr("stroke", "none") // no borders
-                .attr("fill", "#07da19")
-
-        var visibleBars = d3.selectAll("rect")
-            .transition().duration(1500).delay(200)
-            .attr("width", function(d) { return maxWidth * d / 100; } )
-            .attr("fill", "rgb(102,73,231)");
-
-        // Transition on click managed by jQuery
-        bars.on('click', function() {
-            // Generate randomly a data set with 10 elements
-            var newData = [];
-            for (var i=0; i<10; i+=1) { newData.push(Math.floor(100 * Math.random())); }
-
-            // Generate a random color
-            var newColor = 'rgb(' + Math.floor(255 * Math.random()) +
-                             ', ' + Math.floor(255 * Math.random()) +
-                             ', ' + Math.floor(255 * Math.random()) + ')';
-
-            bars.data(newData)
-                 .transition().duration(1000).delay(200)
-                 .attr("fill", newColor)
-                 .attr("width", function(d) { return maxWidth * d / 100; })
-                 .attr("height", "20");
-        });
-    }
+        window.onload = function() {
+            $.each(stats, function(i, e) {
+                $("<h2></h2>").text(e.shift()).appendTo("#content");
+                genChart(e);
+            });
+        }
     </script>
 {% endblock head  %}
 
@@ -79,14 +78,4 @@
 {% block content %}
     <h1>Application Statistics</h1>
     <div class="break_div"></div>
-
-    <div class="stats_table">
-    </div>
-
-    {% for section in stats %}
-        {% with cat=section|first apps=section|tail %}
-
-        <h2>{{ cat }}</h2>
-        {% endwith %}
-    {% endfor %}
 {% endblock content %}
