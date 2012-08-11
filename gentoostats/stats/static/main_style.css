@@ -38,7 +38,7 @@ body {
     min-width: 800px;
     background-color: #F8FBFD;
     color: #222;
-    font-family: sans-serif, Helvetica, Verdana, Arial;
+    font-family: Helvetica, Verdana, Arial, sans-serif;
     font-size: 100%;
     /* letter-spacing: 1px; */
 }
@@ -48,23 +48,23 @@ a {
 }
 
 a:link {
-    color: #0000ff;
+    color: #0000FF;
 }
 
 a:visited {
-    color: #52188c;
+    color: #52188C;
 }
 
 /* focus is added for keyboard support */
 a:hover, a:focus, a:active {
-    color: #7a5ada;
+    color: #7A5ADA;
     text-decoration: underline;
 }
 
 #header {
     height: 50px;
     padding: 10px 15px;
-    background-color: #6649AF;
+    background-color: #5C429F;
 }
 
 #logo {
@@ -172,10 +172,10 @@ ul#nav li a {
     width: auto;
     text-indent: 0;
     white-space: nowrap;
-    color: #f0f0f0;
+    color: #F0F0F0;
     opacity: 1.0;
     background-color: #000000;
-    border: 1px solid #7f7f7f;
+    border: 1px solid #7F7F7F;
     text-align: center;
     font-size: 0.9em;
     font-weight: normal;
