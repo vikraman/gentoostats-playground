@@ -199,47 +199,43 @@ def feature_details(request, feature):
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def mirror_stats(request):
+def server_stats(request):
     """
-    Show statistics about the known mirrors.
-    """
-
-    context = dict(
-        mirrors = MirrorServer.objects.all()
-    )
-
-    return render(request, 'stats/mirror_stats.html', context)
-
-@cache_control(public=True)
-@cache_page(1 * 60)
-def mirror_details(request, mirror):
-    """
-    Show more detailed statistics about a specific mirror.
+    Show statistics about the known sync and mirror servers.
     """
 
     context = dict(
-        mirror = get_object_or_404(MirrorServer, url=mirror)
+        mirror_servers = MirrorServer.objects.all(),
+        sync_servers   = SyncServer.objects.all(),
     )
 
-    return render(request, 'stats/mirror_details.html', context)
+    return render(request, 'stats/server_stats.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def sync_stats(request):
+def mirror_details(request, server_id):
     """
-    TODO: add a description.
+    Show more detailed statistics about a specific mirror server.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    context = dict(
+        server = get_object_or_404(MirrorServer, id=server_id)
+    )
+
+    return render(request, 'stats/server_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def sync_details(request, sync):
+def sync_details(request, server_id):
     """
-    TODO: add a description.
+    Show more detailed statistics about a specific SYNC server.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    context = dict(
+        server = get_object_or_404(MirrorServer, id=server_id)
+    )
+
+    return render(request, 'stats/server_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
@@ -328,6 +324,7 @@ def profile_details(request, profile):
     return render(request, 'stats/not_implemented.html')
 
 @cache_control(public=True)
+#@cache_page(10 * 60) # TODO: uncomment this in production
 @cache_page(0)
 def app_stats(request, dead=False):
     stats = [

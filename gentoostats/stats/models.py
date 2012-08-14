@@ -136,7 +136,7 @@ class Package(AtomABC):
     version = models.CharField(max_length=31, validators=[version_validator])
 
     # category + package_name, denormalised and indexed for performance:
-    cp = models.CharField(max_length=95, unique=True, db_index=True)
+    cp = models.CharField(max_length=95, unique=False, db_index=True)
 
     class Meta:
         unique_together = ( 'category'
@@ -403,6 +403,8 @@ class Feature(models.Model):
         return self.num_all_hosts - self.num_hosts
 
 class MirrorServer(models.Model):
+    # id = models.AutoField(primary_key=True)
+
     # url = models.URLField(unique=True, max_length=255)
     url = models.CharField(unique=True, max_length=255)
 
@@ -413,7 +415,7 @@ class MirrorServer(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('stats:mirror_details_url', (), {'mirror': self.url})
+        return ('stats:mirror_details_url', (), {'server_id': self.id})
 
     @property
     def num_submissions(self):
@@ -435,6 +437,8 @@ class MirrorServer(models.Model):
 
 # sync_server_validator = TODO
 class SyncServer(models.Model):
+    # id = models.AutoField(primary_key=True)
+
     # By default URLField does not like urls starting with 'rsync://'.
     url = models.CharField(unique=True, max_length=255)
 
@@ -445,7 +449,7 @@ class SyncServer(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('stats:sync_details_url', (), {'sync': self.url})
+        return ('stats:sync_details_url', (), {'server_id': self.id})
 
     @property
     def num_submissions(self):

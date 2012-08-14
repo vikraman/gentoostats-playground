@@ -1,0 +1,40 @@
+{% extends "stats/base.html" %}
+{% load url from future %}
+
+{% block title %}Server Statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    <h1>Server Statistics</h1>
+    <div class="break_div"></div>
+
+    {% if not mirror_servers and not sync_servers %}
+        <h2>No servers are present.</h2>
+    {% else %}
+        {% if mirror_servers %}
+            <h2>Mirror Servers</h2>
+            <table border="1">
+                <th>URL</th>
+                <th>Hosts</th>
+                {% for server in mirror_servers %}
+                    <tr>
+                        <td><a href="{{ server.get_absolute_url }}">{{ server }}</a></td>
+                        <td>{{ server.num_hosts }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+        {% if sync_servers %}
+            <h2>SYNC Servers</h2>
+            <table border="1">
+                <th>URL</th>
+                <th>Hosts</th>
+                {% for server in sync_servers %}
+                    <tr>
+                        <td><a href="{{ server.get_absolute_url }}">{{ server }}</a></td>
+                        <td>{{ server.num_hosts }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    {% endif %}
+{% endblock content %}

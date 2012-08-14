@@ -1,0 +1,14 @@
+{% extends "stats/base.html" %}
+{% load url from future %}
+
+{% block title %}Detailed Server Statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    <h1>Detailed Server Statistics for '{{ server }}'</h1>
+    <ul>
+        <li>Present in {{ server.num_submissions|default:"?" }} submission{{ server.num_submissions|default:2|pluralize }}.</li>
+        <li>Currently used by {{ server.num_hosts|default:"?" }} host{{ server.num_hosts|default:2|pluralize }}.</li>
+        <li>Has been used by {{ server.num_all_hosts|default:"?" }} host{{ server.num_all_hosts|default:2|pluralize }}.</li>
+        <li>First appeared in DB on {{ server.added_on|default:"?" }}.</li>
+    </ul>
+{% endblock content %}

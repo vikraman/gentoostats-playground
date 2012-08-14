@@ -81,16 +81,16 @@ urlpatterns = patterns('gentoostats.stats.views',
 
     # Servers: #{{{
     url( r'^stats/servers/$'
-       , 'server'
+       , 'server_stats'
        , name='server_stats_url'
     ),
 
-    url( r'^stats/servers/mirror/(?P<mirror>\S+)/'
+    url( r'^stats/servers/mirror/(?P<server_id>\S+)/'
        , 'mirror_details'
        , name='mirror_details_url'
     ),
 
-    url( r'^stats/servers/sync/(?P<sync>\S+)/'
+    url( r'^stats/servers/sync/(?P<server_id>\S+)/'
        , 'sync_details'
        , name='sync_details_url'
     ),
