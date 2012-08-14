@@ -429,17 +429,18 @@ def app_stats(request, dead=False):
         # return round(100 * n / num_hosts)
 
         import random
-        return random.sample(range(0, 101),  1)[0]
+        return random.randint(0, 100)
 
-    # Turn this: ['Vi/Vim', 'app-editors/vim', 'app-editors/gvim', ...]
-    # into this: [('Vi/Vim', nT), ('app-editors/vim', n1), ('app-editors/gvim', n2), ...]
-    # 'nT' is the total percentage of hosts with this app, calculated by
-    # chaining Q objects. n1, n2, etc. are also percentages.
     for section in stats:
         cat, apps = split_list(section)
         for app in apps:
-            name, pkgs = split_list(app)
+            # Turn this: ['Vi/Vim', 'app-editors/vim', 'app-editors/gvim', ...]
+            # into this: [('Vi/Vim', nT), ('app-editors/vim', n1), ('app-editors/gvim', n2), ...]
+            # 'nT' is the total percentage of hosts with this app, calculated by
+            # chaining Q objects. n1, n2, etc. are also percentages.
+
             q_list = []
+            name, pkgs = split_list(app)
 
             for index, pkg in enumerate(pkgs):
                 q_list.append(Q(installations__package__cp=pkg))
@@ -449,6 +450,9 @@ def app_stats(request, dead=False):
 
             num_total = fresh_submissions_qs.filter(reduce(operator.or_, q_list)).distinct().count()
             app[0] = (name, percentify(num_total))
+
+        # sort 'apps' by each app's usage percentage:
+        section[1:] = sorted(apps, key=lambda x: x[0][1], reverse=True)
 
     context = dict(
         num_hosts = num_hosts,

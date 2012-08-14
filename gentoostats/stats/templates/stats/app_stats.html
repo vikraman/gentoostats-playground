@@ -9,9 +9,11 @@
 
     <script type="text/javascript">
         var stats = {{ stats|safe }};
+        var chartWidth = 0;
 
         function genChart(data) {
-            var chartWidth = $("#content").width();
+            chartWidth = chartWidth || $("#content").width();
+            console.log(chartWidth)
 
             function filterDead(data) {
                 return data.filter(function(e) { return e[0][1] >= 1; });
@@ -27,16 +29,16 @@
 
             // Draw the application names:
             var namesData = data.map(function(e) { return e[0][0]; });
-            var names = chart.selectAll("text")
+            var names = chart.selectAll("text.name")
                 .data(namesData)
                 .enter()
                 .append("text")
+                    .attr("class", "name")
                     .attr("x", 0)
                     .attr("y", function(d, i) { return 25 * i + 20; } )
                     .attr("width", 150)
                     .attr("height", 20)
                     .style("font-size", "20px")
-                    .style("text-anchor", "right")
                     .text(function(d) { return d; });
 
             // Draw the bars:
@@ -52,7 +54,7 @@
                     .attr("stroke", "none") // no borders
                     .attr("fill", "#07da19");
 
-            var maxBarWidth = chartWidth - 200;
+            var maxBarWidth = chartWidth - 265;
             barWidthFunction = d3.scale.linear()
                 .domain([0, 100])
                 .range(["0px", maxBarWidth + "px"]);
@@ -62,14 +64,28 @@
                 .transition().duration(1500).delay(200)
                 .attr("width", function(d) {console.log(d); return barWidthFunction(d);})
                 .attr("fill", "rgb(102,73,231)");
+
+            // Finally, draw the percentage information:
+            var percentagesData = data.map(function(e) { return e[0][1]; });
+            var percentages = chart.selectAll("text.percentage")
+                .data(percentagesData)
+                .enter()
+                .append("text")
+                    .attr("class", "percentage")
+                    .attr("x", chartWidth - 55)
+                    .attr("y", function(d, i) { return 25 * i + 20; } )
+                    .attr("width", 55)
+                    .attr("height", 20)
+                    .style("font-size", "20px")
+                    .text(function(d) { return d + "%"; });
         }
 
-        window.onload = function() {
+        $(document).ready(function() {
             $.each(stats, function(i, e) {
                 $("<h2></h2>").text(e.shift()).appendTo("#content");
                 genChart(e);
             });
-        }
+        });
     </script>
 {% endblock head  %}
 

@@ -142,7 +142,8 @@ ul#nav li a {
 }
 
 svg.stats {
-	padding-bottom: 10px;
+	display: block;
+	padding-bottom: 18px;
 }
 
 .use-selected { color: green; }
