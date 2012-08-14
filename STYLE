@@ -1,0 +1,7 @@
+In order of preference:
+
+1. https://docs.djangoproject.com/en/dev/internals/contributing/writing-code/coding-style/
+2. http://google-styleguide.googlecode.com/svn/trunk/pyguide.html
+3. http://www.python.org/dev/peps/pep-0008/
+
+Comma-first notation in lists and dictionaries is also accepted.
