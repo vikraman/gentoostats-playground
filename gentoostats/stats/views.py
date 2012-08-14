@@ -316,10 +316,19 @@ def use_stats(request):
 @cache_page(1 * 60)
 def use_details(request, useflag):
     """
-    TODO: add a description.
+    Detailed USE flag stats.
     """
 
-    return render(request, 'stats/use_details.html')
+    useflag = get_object_or_404(UseFlag, name=useflag)
+
+    context = dict(
+        useflag         = useflag,
+        num_submissions = useflag.num_submissions,
+        num_all_hosts   = useflag.num_all_hosts,
+        num_hosts       = useflag.num_hosts,
+    )
+
+    return render(request, 'stats/use_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)

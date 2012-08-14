@@ -249,7 +249,7 @@ class UseFlag(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('stats:useflag_details_url', (), {'useflag': self.name})
+        return ('stats:use_details_url', (), {'useflag': self.name})
 
     @property
     def num_submissions(self):
