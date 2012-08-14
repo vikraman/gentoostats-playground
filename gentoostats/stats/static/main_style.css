@@ -147,8 +147,8 @@ td:first-child {
 }
 
 svg.stats {
-	display: block;
-	padding-bottom: 18px;
+    display: block;
+    padding-bottom: 18px;
 }
 
 .use-selected { color: green; }
