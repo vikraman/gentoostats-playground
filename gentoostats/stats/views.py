@@ -298,21 +298,28 @@ submission_details = \
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def useflag_stats(request):
+def use_stats(request):
     """
-    TODO: add a description.
+    Global USE flag stats.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    latest_submission_q = Q(submissions__in=Submission.objects.latest_submission_ids)
+    use_stats = UseFlag.objects.filter(latest_submission_q).annotate(num_hosts_fast=Count('submissions')).order_by('name')
+
+    context = dict(
+        use_stats = use_stats,
+    )
+
+    return render(request, 'stats/use_stats.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def useflag_details(request, useflag):
+def use_details(request, useflag):
     """
     TODO: add a description.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    return render(request, 'stats/use_details.html')
 
 @cache_control(public=True)
 @cache_page(1 * 60)

@@ -1,0 +1,19 @@
+{% extends "stats/base.html" %}
+{% load url from future %}
+
+{% block title %}Global USE Flag Statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    <h1>Global USE Flag Statistics</h1>
+
+    <table border="1">
+        <th>USE</th>
+        <th>Hosts</th>
+        {% for use in use_stats %}
+            <tr>
+                <td><a href="{{ use.get_absolute_url }}">{{ use }}</a></td>
+                <td>{{ use.num_hosts_fast|default_if_none:use.num_hosts }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock content %}

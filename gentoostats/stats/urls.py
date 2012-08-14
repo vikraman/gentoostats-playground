@@ -131,13 +131,13 @@ urlpatterns = patterns('gentoostats.stats.views',
 
     # USE flag(s): #{{{
     url( r'^stats/use/$'
-       , 'useflag_stats'
-       , name='useflag_stats_url'
+       , 'use_stats'
+       , name='use_stats_url'
     ),
 
     url( r'^stats/use/(?P<useflag>\S+)/'
-       , 'useflag_details'
-       , name='useflag_details_url'
+       , 'use_details'
+       , name='use_details_url'
     ),
     #}}}
 

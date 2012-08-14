@@ -5,12 +5,14 @@
 
 {% block content %}
     <h1>Overall statistics</h1>
+    <div class="break_div"></div>
 
     {% if hosts.count %}
-    <ul>
-        <li>Total hosts: {{ hosts.count }}</li>
+        <p>Total hosts: {{ hosts.count }}</p>
+        <div class="break_div"></div>
+
         {% if country_stats %}
-            <li>Country statistics:</li>
+            <h2>Country statistics</h2>
             <table border="1">
                 <th>Country</th>
                 <th>Hosts</th>
@@ -23,15 +25,17 @@
             </table>
         {% endif %}
 
-        <li>Total submissions: {{ submissions.count }}</li>
-        <li>Latest submissions:</li>
+        <h2>Submissions</h2>
+        <div class="break_div"></div>
+        <p>Total submissions: {{ submissions.count }}</p>
+        <p>Latest submissions:</p>
         <ul>
             {% for submission in submissions|slice:":10" reversed %}
                 <li><a href="{{ submission.get_absolute_url }}">[{{ submission.datetime|date:"Y.m.d H:i" }}] ARCH: {{ submission.arch|default:"unknown" }}, ACCEPT_KEYWORDS: {{ submission.global_keywords.all|join:", " }}</a></li>
             {% endfor %}
         </ul>
 
-        <li>ARCH statistics</li>
+        <h2>Architectures</h2>
         <table border="1">
             <th>Arch</th>
             <th>Hosts</th>
@@ -43,19 +47,19 @@
             {% endfor %}
         </table>
 
-        <li>Keyword statistics</li>
+        <h2>Keywords</h2>
         <table border="1">
             <th>Keyword</th>
             <th>Hosts</th>
             {% for keyword in keywords %}
                 <tr>
                     <td><a href="{{ keyword.get_absolute_url }}">{{ keyword }}</a></td>
-                    <td>{{ keyword.num_hosts_fast|default_if_none:"0" }}</td>
+                    <td>{{ keyword.num_hosts_fast|default_if_none:keyword.num_hosts|default_if_none:"?" }}</td>
                 </tr>
             {% endfor %}
         </table>
 
-        <li>Profile statistics</li>
+        <h2>Profiles</h2>
         <table border="1">
             <th>Profile</th>
             <th>Hosts</th>
@@ -67,31 +71,30 @@
             {% endfor %}
         </table>
 
-        <li>FEATURE statistics</li>
+        <h2>FEATUREs</h2>
         <table border="1">
             <th>FEATURE</th>
             <th>Hosts</th>
             {% for feature in features %}
                 <tr>
                     <td><a href="{{ feature.get_absolute_url }}">{{ feature }}</a></td>
-                    <td>{{ feature.num_hosts_fast|default_if_none:"0" }}</td>
+                    <td>{{ feature.num_hosts_fast|default_if_none:feature.num_hosts|default_if_none:"?" }}</td>
                 </tr>
             {% endfor %}
         </table>
 
-        <li>$LANG statistics</li>
+        <h2>$LANG statistics</h2>
         <table border="1">
             <th>$LANG</th>
             <th>Hosts</th>
             {% for lang in langs %}
                 <tr>
                     <td>{{ lang }}</td>
-                    <td>{{ lang.num_hosts_fast|default_if_none:"0" }}</td>
+                    <td>{{ lang.num_hosts_fast|default_if_none:lang.num_hosts|default_if_none:"?" }}</td>
                 </tr>
             {% endfor %}
         </table>
-    </ul>
     {% else %}
-        <h1>No submissions (and hosts) are present yet.</h1>
+        <h2>No submissions (and hosts) are present yet.</h2>
     {% endif %}
 {% endblock content %}
