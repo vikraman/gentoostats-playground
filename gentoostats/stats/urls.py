@@ -79,25 +79,18 @@ urlpatterns = patterns('gentoostats.stats.views',
     ),
     #}}}
 
-    # Mirror(s): #{{{
-    url( r'^stats/mirror/$'
-       , 'mirror_stats'
-       , name='mirror_stats_url'
+    # Servers: #{{{
+    url( r'^stats/servers/$'
+       , 'server'
+       , name='server_stats_url'
     ),
 
-    url( r'^stats/mirror/(?P<mirror>\S+)/'
+    url( r'^stats/servers/mirror/(?P<mirror>\S+)/'
        , 'mirror_details'
        , name='mirror_details_url'
     ),
-    #}}}
 
-    # SYNC(s): #{{{
-    url( r'^stats/sync/$'
-       , 'sync_stats'
-       , name='sync_stats_url'
-    ),
-
-    url( r'^stats/sync/(?P<sync>\S+)/'
+    url( r'^stats/servers/sync/(?P<sync>\S+)/'
        , 'sync_details'
        , name='sync_details_url'
     ),
