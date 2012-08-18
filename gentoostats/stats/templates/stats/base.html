@@ -1,44 +1,43 @@
 {% load url from future %}
 
 {% load package_helpers %}
+{% load general %}
 {% load nav %}
 
-{#{% spaceless %}#}
-    <!DOCTYPE html>
-    <html lang="en">
-        <head>
-            <meta charset="utf-8">
-            {% block head %}
-                <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}/main_style.css" />
-                <title>{% block title %}Gentoostats{% endblock %}</title>
-            {% endblock head %}
-        </head>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        {% block head %}
+            <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}/main_style.css" />
+            <title>{% block title %}Gentoostats{% endblock %}</title>
+        {% endblock head %}
+    </head>
 
-        <body>
-            {% block body %}
-                <div id="header">
-                    {% block header %}
-                        <a id="logo" href="{% url 'stats:index_url' %}" title="Home"></a>
-                        <ul id="nav">
-                            <li>{% nav_link 'stats:index_url' 'Home' %}<span class="sep">|</span></li>
-                            <li>{% nav_link 'stats:stats_url' 'Stats' %}<span class="sep">|</span></li>
-                            <li>{% nav_link 'stats:faq_url' 'FAQ' %}<span class="sep">|</span></li>
-                            <li>{% nav_link 'stats:about_url' 'About' %}</li>
-                        </ul>
-                    {% endblock header %}
-                </div>
+    <body>
+        {% block body %}
+            <div id="header">
+                {% block header %}
+                    <a id="logo" href="{% url 'stats:index_url' %}" title="Home"></a>
+                    <ul id="nav">
+                        <li>{% nav_link 'stats:index_url' 'Home' %}<span class="sep">|</span></li>
+                        <li>{% nav_link 'stats:stats_url' 'Stats' %}<span class="sep">|</span></li>
+                        <li>{% nav_link 'stats:faq_url' 'FAQ' %}<span class="sep">|</span></li>
+                        <li>{% nav_link 'stats:about_url' 'About' %}</li>
+                    </ul>
+                {% endblock header %}
+            </div>
 
-                <div id="content">
-                    {% block content %}
-                    {% endblock content %}
-                </div>
+            <div id="content">
+                {% block content %}
+                {% endblock content %}
+            </div>
 
-                <div id="footer">
-                    {% block footer %}
-                        <p>Gentoostats is an official Gentoo project.</p>
-                    {% endblock footer %}
-                </div>
-            {% endblock body %}
-        </body>
-    </html>
-{#{% endspaceless %}#}
+            <div id="footer">
+                {% block footer %}
+                    <p>Gentoostats is an official Gentoo project.</p>
+                {% endblock footer %}
+            </div>
+        {% endblock body %}
+    </body>
+</html>

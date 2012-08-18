@@ -1,9 +1,10 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Home | Gentoostats{% endblock title %}
 
 {% block content %}
-    <h1>Welcome to Gentoostats</h1>
+    {% h1 "Welcome to Gentoostats" %}
     <p>Gentoostats is a really nice project.</p>
 {% endblock content %}

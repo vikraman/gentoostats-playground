@@ -7,19 +7,14 @@ ul {
     padding-left: 1.6em;
 }
 
-.break_div {
-    clear: both;
-    display: block;
-    margin: 0;
-    padding: 0;
-}
-
 h1, h2, h3, h4, h5, h6 {
     clear: both;
-    display: inline-block;
     padding-bottom: 0px;
     margin-top: 0.5em;
     margin-bottom: 0.333em;
+}
+
+a.header {
     border-bottom: 1px dotted #999;
 }
 
@@ -48,16 +43,16 @@ a {
     text-decoration: none;
 }
 
-a:link {
+a[href]:link {
     color: #0000FF;
 }
 
-a:visited {
+a[href]:visited {
     color: #52188C;
 }
 
 /* focus is added for keyboard support */
-a:hover, a:focus, a:active {
+a[href]:hover, a[href]:focus, a[href]:active {
     color: #7A5ADA;
     text-decoration: underline;
 }

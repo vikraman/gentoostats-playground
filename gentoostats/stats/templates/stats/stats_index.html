@@ -1,10 +1,12 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Home | Gentoostats{% endblock title %}
 
 {% block content %}
-    <h1>Available Statistics</h1>
+    {% h1 "Available Statistics" %}
+
     <ul>
         <li><a href="{% url 'stats:overall_stats_url' %}">Overall stats</a></li>
         <li><a href="{% url 'stats:app_stats_url' %}">App stats</a></li>

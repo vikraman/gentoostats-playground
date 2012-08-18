@@ -167,6 +167,7 @@ def arch_details(request, arch):
         num_submissions = Submission.objects.filter(arch=arch).count(),
         num_all_hosts   = Submission.objects.filter(arch=arch).order_by().aggregate(Count('host', distinct=True)).values()[0],
         num_hosts       = Submission.objects.latest_submissions.filter(arch=arch).count(),
+        added_on        = Submission.objects.filter(arch=arch).order_by("datetime")[:1].get().datetime,
     )
 
     return render(request, 'stats/arch_details.html', context)

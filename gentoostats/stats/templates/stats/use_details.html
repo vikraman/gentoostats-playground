@@ -1,10 +1,14 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Detailed USE Flag Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>Detailed USE Flag Statistics for '{{ useflag }}'</h1>
+    {% with django_sucks="Detailed USE Flag Statistics for '"|add:useflag|add:"'" %}
+        {% h1 django_sucks %}
+    {% endwith %}
+
     <ul>
         <li>Present in {{ num_submissions|default:"?" }} submission{{ num_submissions|default:2|pluralize }}.</li>
         <li>Currently used by {{ num_hosts|default:"?" }} host{{ num_hosts|default:2|pluralize }}.</li>

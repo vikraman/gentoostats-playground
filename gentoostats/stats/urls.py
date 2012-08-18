@@ -47,7 +47,7 @@ urlpatterns = patterns('gentoostats.stats.views',
     #}}}
 
     # ARCH(es): #{{{
-    url( r'^stats/arch/(?P<arch>\w+)/'
+    url( r'^stats/arch/(?P<arch>\S+)/'
        , 'arch_details'
        , name='arch_details_url'
     ),

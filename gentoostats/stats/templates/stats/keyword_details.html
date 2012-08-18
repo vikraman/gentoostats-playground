@@ -1,10 +1,13 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Detailed Keyword Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>Detailed Keyword Statistics for '{{ keyword }}'</h1>
+    {% with django_sucks="Detailed Keyword Statistics for '"|add:keyword|add:"'" %}
+        {% h1 django_sucks %}
+    {% endwith %}
 
     <ul>
         <li>Present in {{ keyword.num_submissions|default:"?" }} submission{{ feature.num_submissions|default:2|pluralize }}.</li>

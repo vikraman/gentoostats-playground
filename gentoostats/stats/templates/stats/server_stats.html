@@ -1,11 +1,11 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Server Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>Server Statistics</h1>
-    <div class="break_div"></div>
+    {% h1 "Server Statistics" %}
 
     {% if not mirror_servers and not sync_servers %}
         <h2>No servers are present.</h2>

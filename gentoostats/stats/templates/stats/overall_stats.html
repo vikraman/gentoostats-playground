@@ -1,11 +1,11 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Overall Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>Overall statistics</h1>
-    <div class="break_div"></div>
+    {% h1 "Overall statistics" %}
 
     {% if hosts.count %}
         <p>Total hosts: {{ hosts.count }}</p>
@@ -26,7 +26,6 @@
         {% endif %}
 
         <h2>Submissions</h2>
-        <div class="break_div"></div>
         <p>Total submissions: {{ submissions.count }}</p>
         <p>Latest submissions:</p>
         <ul>

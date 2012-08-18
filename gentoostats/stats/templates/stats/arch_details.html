@@ -1,14 +1,18 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Detailed ARCH Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>Detailed ARCH Statistics for '{{ arch }}'</h1>
+    {% with django_sucks="Detailed ARCH Statistics for '"|add:arch|add:"'" %}
+        {% h1 django_sucks %}
+    {% endwith %}
+
     <ul>
         <li>Present in {{ num_submissions|default:"?" }} submission{{ num_submissions|default:2|pluralize }}.</li>
         <li>Currently used by {{ num_hosts|default:"?" }} host{{ num_hosts|default:2|pluralize }}.</li>
         <li>Has been used by {{ num_all_hosts|default:"?" }} host{{ num_all_hosts|default:2|pluralize }}.</li>
-        <li>First appeared in DB on {{ TODO|default:"?" }}.</li>
+        <li>First appeared in DB on {{ added_on|default:"?" }}.</li>
     </ul>
 {% endblock content %}

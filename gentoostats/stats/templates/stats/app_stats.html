@@ -1,6 +1,7 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
 {% load package_helpers %}
+{% load general %}
 
 {% block head %}
     <script src="{{ STATIC_URL }}/d3.2.10.0.js"></script>
@@ -92,6 +93,5 @@
 {% block title %}Application Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>Application Statistics</h1>
-    <div class="break_div"></div>
+    {% h1 "Application Statistics" %}
 {% endblock content %}

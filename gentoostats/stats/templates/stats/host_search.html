@@ -1,10 +1,11 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Host Search | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>Host Search</h1>
+    {% h1 "Host Search" %}
 
     {% if form.errors %}
         <p class='error'>Please correct the error{{ form.errors|pluralize }} below.</p>

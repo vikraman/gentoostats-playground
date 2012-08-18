@@ -1,10 +1,14 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Detailed Server Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>Detailed Server Statistics for '{{ server }}'</h1>
+    {% with django_sucks="Detailed Server Statistics for '"|add:server|add:"'" %}
+        {% h1 django_sucks %}
+    {% endwith %}
+
     <ul>
         <li>Present in {{ server.num_submissions|default:"?" }} submission{{ server.num_submissions|default:2|pluralize }}.</li>
         <li>Currently used by {{ server.num_hosts|default:"?" }} host{{ server.num_hosts|default:2|pluralize }}.</li>
