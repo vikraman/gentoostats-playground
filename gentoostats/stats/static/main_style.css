@@ -46,7 +46,12 @@ p.code {
     margin-top: 10px;
     margin-bottom: 15px;
     font-family: monospace;
-    font-size: 1.1em;
+    font-size: 1.15em;
+}
+
+input[type='submit'] {
+    margin-top: 10px;
+    font-size: 1.2em;
 }
 
 body {
