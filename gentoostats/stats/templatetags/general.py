@@ -28,3 +28,7 @@ def header(level, content):
 @register.simple_tag
 def h1(content):
     return header(1, content)
+
+@register.simple_tag
+def h2(content):
+    return header(2, content)

@@ -6,5 +6,14 @@
 
 {% block content %}
     {% h1 "Welcome to Gentoostats" %}
-    <p>Gentoostats is a really nice project.</p>
+    {% h2 "About" %}
+    <p>The Gentoostats project aims to gather statistics about the installed
+    packages on Gentoo systems in order to provide useful information to both
+    users and developers.</p>
+    {% h2 "Why contribute?" %}
+    <ul>
+    <li>Help developers see which packages are important</li>
+    <li>Help developers choose when to stabilise a package</li>
+    <li>Create a snapshot of your system (your world file + package USE flags)</li>
+    <li>Help us settle down <a href="/stats/apps/#editors-ides">some serious issues</a></li>
 {% endblock content %}

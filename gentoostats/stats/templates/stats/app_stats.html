@@ -12,6 +12,13 @@
         var stats = {{ stats|safe }};
         var chartWidth = 0;
 
+        function slugify(text) {
+            text = text.replace(/[^-a-zA-Z0-9,/&\s]+/ig, '');
+            text = text.replace(/[\s/]/gi, "-");
+            text = text.replace(/--/gi, "-");
+            return text.toLowerCase();
+        }
+
         function genChart(data) {
             chartWidth = chartWidth || $("#content").width();
             console.log(chartWidth)
@@ -83,9 +90,17 @@
 
         $(document).ready(function() {
             $.each(stats, function(i, e) {
-                $("<h2></h2>").text(e.shift()).appendTo("#content");
+                header = e.shift();
+                $("<h2><a class=\"header\" name=\"" + slugify(header) + "\">" + header + "</a></h2>").appendTo("#content");
                 genChart(e);
             });
+
+            currentHash = window.location.hash.replace('#', '');
+            if (currentHash != '') {
+                $(document.body).animate({
+                    'scrollTop': $('a[name="' + currentHash + '"]').offset().top
+                }, 1500);
+            }
         });
     </script>
 {% endblock head  %}
