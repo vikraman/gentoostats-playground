@@ -21,7 +21,7 @@
 
         function genChart(data) {
             chartWidth = chartWidth || $("#content").width();
-            console.log(chartWidth)
+            /* console.log(chartWidth) */
 
             function filterDead(data) {
                 return data.filter(function(e) { return e[0][1] >= 1; });
@@ -70,7 +70,7 @@
             // And make them grow:
             var visibleBars = chart.selectAll("rect")
                 .transition().duration(1500).delay(200)
-                .attr("width", function(d) {console.log(d); return barWidthFunction(d);})
+                .attr("width", function(d) {/* console.log(d); */ return barWidthFunction(d);})
                 .attr("fill", "rgb(102,73,231)");
 
             // Finally, draw the percentage information:

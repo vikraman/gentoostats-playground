@@ -166,7 +166,7 @@ def arch_details(request, arch):
 
     try:
         context = dict(
-            stats_type      = "arch",
+            stats_type      = "Arch",
             value           = arch,
             num_submissions = Submission.objects.filter(arch=arch).count(),
             num_all_hosts   = Submission.objects.filter(arch=arch).order_by().aggregate(Count('host', distinct=True)).values()[0],
@@ -332,13 +332,15 @@ def use_details(request, useflag):
     useflag = get_object_or_404(UseFlag, name=useflag)
 
     context = dict(
-        useflag         = useflag,
+        stats_type      = "USE Flag",
+        value           = useflag,
         num_submissions = useflag.num_submissions,
         num_all_hosts   = useflag.num_all_hosts,
         num_hosts       = useflag.num_hosts,
+        added_on        = useflag.added_on,
     )
 
-    return render(request, 'stats/use_details.html', context)
+    return render(request, 'stats/generic_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
@@ -349,7 +351,7 @@ def profile_details(request, profile):
 
     try:
         context = dict(
-            stats_type      = "profile",
+            stats_type      = "Profile",
             value           = profile,
             num_submissions = Submission.objects.filter(profile=profile).count(),
             num_all_hosts   = Submission.objects.filter(profile=profile).order_by().aggregate(Count('host', distinct=True)).values()[0],
