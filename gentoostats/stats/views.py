@@ -166,7 +166,8 @@ def arch_details(request, arch):
 
     try:
         context = dict(
-            arch            = arch,
+            stats_type      = "arch",
+            value           = arch,
             num_submissions = Submission.objects.filter(arch=arch).count(),
             num_all_hosts   = Submission.objects.filter(arch=arch).order_by().aggregate(Count('host', distinct=True)).values()[0],
             num_hosts       = Submission.objects.latest_submissions.filter(arch=arch).count(),
@@ -175,7 +176,7 @@ def arch_details(request, arch):
     except ObjectDoesNotExist:
         raise Http404
 
-    return render(request, 'stats/arch_details.html', context)
+    return render(request, 'stats/generic_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
@@ -294,10 +295,13 @@ class SubmissionDetailView(ImprovedDetailView):
     queryset = Submission.objects.select_related()
     pk_url_kwarg = 'id'
 
+# TODO:
 submission_details = \
-    cache_control(private=True) (
-        cache_page(24 * 60 * 60) (
-            SubmissionDetailView.as_view()
+    login_required(login_url='/login') (
+        cache_control(private=True) (
+            cache_page(24 * 60 * 60) (
+                SubmissionDetailView.as_view()
+            )
         )
     )
 #}}}
@@ -340,10 +344,22 @@ def use_details(request, useflag):
 @cache_page(1 * 60)
 def profile_details(request, profile):
     """
-    TODO: add a description.
+    Detailed profile stats.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    try:
+        context = dict(
+            stats_type      = "profile",
+            value           = profile,
+            num_submissions = Submission.objects.filter(profile=profile).count(),
+            num_all_hosts   = Submission.objects.filter(profile=profile).order_by().aggregate(Count('host', distinct=True)).values()[0],
+            num_hosts       = Submission.objects.latest_submissions.filter(profile=profile).count(),
+            added_on        = Submission.objects.filter(profile=profile).order_by("datetime")[:1].get().datetime,
+        )
+    except ObjectDoesNotExist:
+        raise Http404
+
+    return render(request, 'stats/generic_details.html', context)
 
 @cache_control(public=True)
 #@cache_page(10 * 60) # TODO: uncomment this in production

@@ -2,11 +2,11 @@
 {% load url from future %}
 {% load general %}
 
-{% block title %}Detailed ARCH Statistics | Gentoostats {% endblock title %}
+{% block title %}Detailed {{ stats_type|capfirst }} Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    {% with django_sucks="Detailed ARCH Statistics for '"|append:arch|append:"'" %}
-        {% h1 django_sucks %}
+    {% with this_sucks="Detailed "|append:stats_type|append:" Statistics for '"|append:value|append:"'" %}
+        {% h1 this_sucks %}
     {% endwith %}
 
     <ul>

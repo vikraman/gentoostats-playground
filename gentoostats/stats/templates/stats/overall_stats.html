@@ -27,10 +27,10 @@
 
         <h2>Submissions</h2>
         <p>Total submissions: {{ submissions.count }}</p>
-        <p>Latest submissions:</p>
+        <p>Latest 10 submissions:</p>
         <ul>
             {% for submission in submissions|slice:":10" reversed %}
-                <li><a href="{{ submission.get_absolute_url }}">[{{ submission.datetime|date:"Y.m.d H:i" }}] ARCH: {{ submission.arch|default:"unknown" }}, ACCEPT_KEYWORDS: {{ submission.global_keywords.all|join:", " }}</a></li>
+                <li>[{{ submission.datetime|date:"Y.m.d H:i" }}] ARCH: {{ submission.arch|default:"unknown" }}, ACCEPT_KEYWORDS: {{ submission.global_keywords.all|join:", " }}</li>
             {% endfor %}
         </ul>
 
