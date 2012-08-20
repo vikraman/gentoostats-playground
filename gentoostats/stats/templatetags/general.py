@@ -5,6 +5,19 @@ from django import template
 
 register = template.Library()
 
+@register.filter
+def get_unicode(obj):
+    return unicode(obj)
+
+@register.filter(is_safe=False)
+def append(value, arg):
+    """Combines two strings."""
+
+    try:
+        return unicode(value) + unicode(arg)
+    except Exception:
+        return ''
+
 @register.simple_tag
 def header(level, content):
     return mark_safe(

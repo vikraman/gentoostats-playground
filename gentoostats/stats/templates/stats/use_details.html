@@ -5,7 +5,7 @@
 {% block title %}Detailed USE Flag Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    {% with django_sucks="Detailed USE Flag Statistics for '"|add:useflag|add:"'" %}
+    {% with django_sucks="Detailed USE Flag Statistics for '"|append:useflag|append:"'" %}
         {% h1 django_sucks %}
     {% endwith %}
 

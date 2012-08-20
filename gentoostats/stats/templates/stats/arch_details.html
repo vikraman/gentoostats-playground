@@ -5,7 +5,7 @@
 {% block title %}Detailed ARCH Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    {% with django_sucks="Detailed ARCH Statistics for '"|add:arch|add:"'" %}
+    {% with django_sucks="Detailed ARCH Statistics for '"|append:arch|append:"'" %}
         {% h1 django_sucks %}
     {% endwith %}
 

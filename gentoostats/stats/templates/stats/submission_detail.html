@@ -6,7 +6,7 @@
 {% block title %}Detailed Submission Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    {% with django_sucks="Detailed Submission Statistics for submission #"|add:submission.id %}
+    {% with django_sucks="Detailed Submission Statistics for submission #"|append:submission.id %}
         {% h1 django_sucks %}
     {% endwith %}
 

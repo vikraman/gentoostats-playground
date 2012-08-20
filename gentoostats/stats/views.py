@@ -7,11 +7,13 @@ import datetime
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page, cache_control
 from django.core.urlresolvers import reverse
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.timezone import utc
 from django.views.generic import ListView, DetailView
 from django.db.models import Q, Min, Max, Count
 from django.shortcuts import render, redirect, \
                              get_object_or_404, get_list_or_404
+from django.http import Http404
 
 from .util import split_list, add_hyphens_to_uuid
 from .forms import *
@@ -162,13 +164,16 @@ def arch_details(request, arch):
     Show more detailed statistics about a specific arch.
     """
 
-    context = dict(
-        arch            = arch,
-        num_submissions = Submission.objects.filter(arch=arch).count(),
-        num_all_hosts   = Submission.objects.filter(arch=arch).order_by().aggregate(Count('host', distinct=True)).values()[0],
-        num_hosts       = Submission.objects.latest_submissions.filter(arch=arch).count(),
-        added_on        = Submission.objects.filter(arch=arch).order_by("datetime")[:1].get().datetime,
-    )
+    try:
+        context = dict(
+            arch            = arch,
+            num_submissions = Submission.objects.filter(arch=arch).count(),
+            num_all_hosts   = Submission.objects.filter(arch=arch).order_by().aggregate(Count('host', distinct=True)).values()[0],
+            num_hosts       = Submission.objects.latest_submissions.filter(arch=arch).count(),
+            added_on        = Submission.objects.filter(arch=arch).order_by("datetime")[:1].get().datetime,
+        )
+    except ObjectDoesNotExist:
+        raise Http404
 
     return render(request, 'stats/arch_details.html', context)
 

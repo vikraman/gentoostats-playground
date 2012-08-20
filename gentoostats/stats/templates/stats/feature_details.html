@@ -5,7 +5,7 @@
 {% block title %}Detailed FEATURE Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    {% with django_sucks="Detailed FEATURE Statistics for '"|add:feature|add:"'" %}
+    {% with django_sucks="Detailed FEATURE Statistics for '"|append:feature|append:"'" %}
         {% h1 django_sucks %}
     {% endwith %}
 

@@ -5,7 +5,7 @@
 {% block title %}Detailed Host Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    {% with django_sucks="Detailed Host Statistics for '"|add:host.id|add:"'" %}
+    {% with django_sucks="Detailed Host Statistics for '"|append:host.id|append:"'" %}
         {% h1 django_sucks %}
     {% endwith %}
 

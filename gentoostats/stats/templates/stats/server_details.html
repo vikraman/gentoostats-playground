@@ -5,7 +5,7 @@
 {% block title %}Detailed Server Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    {% with django_sucks="Detailed Server Statistics for '"|add:server|add:"'" %}
+    {% with django_sucks="Detailed Server Statistics for '"|append:server|append:"'" %}
         {% h1 django_sucks %}
     {% endwith %}
 
