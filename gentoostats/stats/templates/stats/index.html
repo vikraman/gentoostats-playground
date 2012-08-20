@@ -6,14 +6,41 @@
 
 {% block content %}
     {% h1 "Welcome to Gentoostats" %}
-    {% h2 "About" %}
     <p>The Gentoostats project aims to gather statistics about the installed
     packages on Gentoo systems in order to provide useful information to both
     users and developers.</p>
     {% h2 "Why contribute?" %}
     <ul>
-    <li>Help developers see which packages are important</li>
+    <li>Help developers see which packages and overlays are important</li>
     <li>Help developers choose when to stabilise a package</li>
     <li>Create a snapshot of your system (your world file + package USE flags)</li>
     <li>Help us settle down <a href="/stats/apps/#editors-ides">some serious issues</a></li>
+    </ul>
+    {% h2 "How to contribute?" %}
+    <p>Contribution is easy -- just download the client, configure it, and
+    submit your stats.</p>
+    {% h2 "Installation" %}
+    <p>The following dependencies are required:</p>
+    <ul>
+        <li>Python 2.7+, including Python 3+ (emerge -av '>=dev-lang/python-2.7')</li>
+        <li>Portage (emerge -av 'sys-apps/portage')</li>
+        <li>Gentoolkit (emerge -av 'app-portage/gentoolkit')</li>
+    </ul>
+    <p>Make sure that you have the above dependencies installad. Then clone the
+    client repository:</p>
+    <p class="code">git clone https://github.com/gg7/gentoostats.git</p>
+    <p>Place the directory wherever you want, but remember to add the 'pym'
+    subdirectory directory to your $PYTHONPATH. For example,</p>
+    <p class="code">export PYTHONPATH="~/gentoostats/pym"</p>
+    <p>Now, onto configuration:</p>
+    <p class="code">gentoostats/bin/gentoostats configure</p>
+    <p>You will be asked a couple of questions and the following two files will
+    be generated:</p>
+    <ul>
+        <li>/etc/gentoostats/auth.cfg</li>
+        <li>/etc/gentoostats/payload.cfg</li>
+    </ul>
+    <p>Finally, run</p>
+    <p class="code">gentoostats submit</p>
+    {% h2 "NOTE: As of 20 Aug 2012, the server is yet to be deployed." %}
 {% endblock content %}
