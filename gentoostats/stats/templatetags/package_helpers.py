@@ -45,7 +45,7 @@ def divide(a, b):
 
 @register.filter()
 def format_use_flags(installation):
-    """Prints USE flags with span information"""
+    """Prints USE flag information with <span> elements."""
 
     use    = installation.use.values_list('name', flat=True)
     iuse   = installation.iuse.values_list('name', flat=True)
