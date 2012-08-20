@@ -239,7 +239,7 @@ def sync_details(request, server_id):
     """
 
     context = dict(
-        server = get_object_or_404(MirrorServer, id=server_id)
+        server = get_object_or_404(MirrorServer, id=server_id),
     )
 
     return render(request, 'stats/server_details.html', context)
@@ -251,16 +251,31 @@ def repository_stats(request):
     TODO: add a description.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    context = dict(
+        repositories = Repository.objects.all(),
+    )
+
+    return render(request, 'stats/repository_stats.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def repository_details(request, repository):
+def repository_details(request, name):
     """
     TODO: add a description.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    repo = get_object_or_404(Repository, name=name)
+
+    context = dict(
+        stats_type      = "Repository",
+        value           = repo,
+        num_submissions = repo.num_submissions,
+        num_all_hosts   = repo.num_all_hosts,
+        num_hosts       = repo.num_hosts,
+        added_on        = repo.added_on,
+    )
+
+    return render(request, 'stats/generic_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)

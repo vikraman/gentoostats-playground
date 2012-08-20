@@ -215,13 +215,19 @@ def process_submission(request):
                 if created:
                     package_name.full_clean()
 
+                repo = atom.repo or info.get('REPO')
+                if repo:
+                    repo, created = Repository.objects.get_or_create(name=repo)
+                    if created:
+                        repo.full_clean()
+
                 package, created = Package.objects.get_or_create(
                     category     = category,
                     package_name = package_name,
 
                     version      = atom.cpv.lstrip(atom.cp),
                     slot         = atom.slot,
-                    repository   = atom.repo,
+                    repository   = repo,
                 )
                 if created:
                     package.full_clean()
@@ -315,6 +321,12 @@ def process_submission(request):
                             package_name, _ = PackageName.objects.get_or_create(name=package_name)
                             package_name.full_clean()
 
+                            repo = patom.repo
+                            if repo:
+                                repo, created = Repository.objects.get_or_create(name=repo)
+                                if created:
+                                    repo.full_clean()
+
                             atom, _ = Atom.objects.get_or_create(
                                 full_atom    = entry,
                                 operator     = patom.operator or '',
@@ -323,7 +335,7 @@ def process_submission(request):
                                 package_name = package_name,
                                 version      = patom.cpv.lstrip(patom.cp),
                                 slot         = patom.slot,
-                                repository   = patom.repo,
+                                repository   = repo,
                             )
 
                             atom.full_clean()

@@ -68,7 +68,30 @@ class Repository(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('stats:repository_details_url', (), {'url': self.url})
+        return ('stats:repository_details_url', (), {'name': self.name})
+
+    @property
+    def num_submissions(self):
+        return Submission.objects\
+                .filter(installations__package__repository__name=self.name)\
+                .distinct().count()
+
+    @property
+    def num_all_hosts(self):
+        return Submission.objects.order_by()\
+                .filter(installations__package__repository__name=self.name)\
+                .aggregate(Count('host', distinct=True)).values()[0]
+
+    @property
+    def num_hosts(self):
+        return Submission.objects.latest_submissions\
+                .filter(installations__package__repository__name=self.name)\
+                .distinct().count()
+
+    @property
+    def num_packages(self):
+        return Submission.objects.latest_submissions\
+                .filter(installations__package__repository__name=self.name).count()
 
 version_validator = RegexValidator(r'^\S+$')
 slot_validator    = RegexValidator(r'^\S+$')

@@ -73,7 +73,7 @@ urlpatterns = patterns('gentoostats.stats.views',
        , name='repository_stats_url'
     ),
 
-    url( r'^stats/repository/(?P<repository>\S+)/'
+    url( r'^stats/repository/(?P<name>\S+)/'
        , 'repository_details'
        , name='repository_details_url'
     ),

@@ -161,6 +161,11 @@ ul#nav li a {
     /* webkit-radial-gradient(0% 100%, circle cover, rgba(0, 0, 0, 0.078), transparent 80px, transparent 100%); */
 }
 
+th {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
 td:first-child {
     min-width: 400px;
 }
