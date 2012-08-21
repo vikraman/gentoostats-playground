@@ -1,0 +1,18 @@
+{% extends "stats/base.html" %}
+{% load url from future %}
+{% load general %}
+
+{% block title %}Detailed Server Statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    {% with this_sucks="Detailed Server Statistics for '"|append:server|append:"'" %}
+        {% h1 this_sucks %}
+    {% endwith %}
+
+    <ul>
+        <li>Present in {{ server.num_submissions|default:"?" }} submission{{ server.num_submissions|default:2|pluralize }}.</li>
+        <li>Currently used by {{ server.num_hosts|default:"?" }} host{{ server.num_hosts|default:2|pluralize }}.</li>
+        <li>Has been used by {{ server.num_all_hosts|default:"?" }} host{{ server.num_all_hosts|default:2|pluralize }}.</li>
+        <li>First appeared in DB on {{ server.added_on|default:"?" }}.</li>
+    </ul>
+{% endblock content %}

@@ -1,10 +1,13 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Detailed FEATURE Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>Detailed FEATURE Statistics for '{{ feature }}'</h1>
+    {% with this_sucks="Detailed FEATURE Statistics for '"|append:feature|append:"'" %}
+        {% h1 this_sucks %}
+    {% endwith %}
 
     <ul>
         <li>Present in {{ feature.num_submissions|default:"?" }} submission{{ feature.num_submissions|default:2|pluralize }}.</li>

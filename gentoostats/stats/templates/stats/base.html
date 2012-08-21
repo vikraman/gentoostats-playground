@@ -1,32 +1,44 @@
 {% load url from future %}
-{#{% spaceless %}#}
-    <!DOCTYPE html>
-    <html lang="en">
-        <head>
-            {% block head %}
-                <title>{% block title %}Gentoostats{% endblock %}</title>
-            {% endblock head %}
-        </head>
 
-        <body>
-            {% block body %}
-                <div id="header">
-                    {% block header %}
-                        <ul id="nav">
-                            <li><a href="{% url 'stats:index_url' %}">Home</a></li>
-                            <li><a href="{% url 'stats:about_url' %}">About</a></li>
-                        </ul>
-                    {% endblock header %}
-                </div>
+{% load package_helpers %}
+{% load general %}
+{% load nav %}
 
-                <div id="content">
-                    {% block content %}{% endblock content %}
-                </div>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        {% block head %}
+            <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}/main_style.css" />
+            <title>{% block title %}Gentoostats{% endblock %}</title>
+        {% endblock head %}
+    </head>
 
-                <div id="footer">
-                    {% block footer %}{% endblock footer %}
-                </div>
-            {% endblock body %}
-        </body>
-    </html>
-{#{% endspaceless %}#}
+    <body>
+        {% block body %}
+            <div id="header">
+                {% block header %}
+                    <a id="logo" href="{% url 'stats:index_url' %}" title="Home"></a>
+                    <ul id="nav">
+                        <li>{% nav_link 'stats:index_url' 'Home' %}<span class="sep">|</span></li>
+                        <li>{% nav_link 'stats:stats_url' 'Stats' %}<span class="sep">|</span></li>
+                        {#<li>{% nav_link 'stats:faq_url' 'FAQ' %}<span class="sep">|</span></li>#}
+                        <li>{% nav_link 'stats:about_url' 'About' %}</li>
+                    </ul>
+                    <a href="https://github.com/gg7/gentoostats_server"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png" alt="Fork me on GitHub"></a>
+                {% endblock header %}
+            </div>
+
+            <div id="content">
+                {% block content %}
+                {% endblock content %}
+            </div>
+
+            <div id="footer">
+                {% block footer %}
+                    <p>Gentoostats is an official Gentoo project. "Gentoo" and the "g" logo are trademarks of Gentoo Foundation, Inc.</p>
+                {% endblock footer %}
+            </div>
+        {% endblock body %}
+    </body>
+</html>

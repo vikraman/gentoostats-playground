@@ -68,7 +68,30 @@ class Repository(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('stats:repository_details_url', (), {'url': self.url})
+        return ('stats:repository_details_url', (), {'name': self.name})
+
+    @property
+    def num_submissions(self):
+        return Submission.objects\
+                .filter(installations__package__repository__name=self.name)\
+                .distinct().count()
+
+    @property
+    def num_all_hosts(self):
+        return Submission.objects.order_by()\
+                .filter(installations__package__repository__name=self.name)\
+                .aggregate(Count('host', distinct=True)).values()[0]
+
+    @property
+    def num_hosts(self):
+        return Submission.objects.latest_submissions\
+                .filter(installations__package__repository__name=self.name)\
+                .distinct().count()
+
+    @property
+    def num_packages(self):
+        return Submission.objects.latest_submissions\
+                .filter(installations__package__repository__name=self.name).count()
 
 version_validator = RegexValidator(r'^\S+$')
 slot_validator    = RegexValidator(r'^\S+$')
@@ -135,6 +158,9 @@ class Package(AtomABC):
     # version also holds the revision specified (if there's any)
     version = models.CharField(max_length=31, validators=[version_validator])
 
+    # category + package_name, denormalised and indexed for performance:
+    cp = models.CharField(max_length=95, unique=False, db_index=True)
+
     class Meta:
         unique_together = ( 'category'
                           , 'package_name'
@@ -155,6 +181,10 @@ class Package(AtomABC):
                                  , slot
                                  , repository
         )
+
+    def save(self, *args, **kwargs):
+        self.cp = self.category.name + '/' + self.package_name.name
+        super(Package, self).save(*args, **kwargs)
 
     @models.permalink
     def get_absolute_url(self):
@@ -242,7 +272,7 @@ class UseFlag(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('stats:useflag_details_url', (), {'useflag': self.name})
+        return ('stats:use_details_url', (), {'useflag': self.name})
 
     @property
     def num_submissions(self):
@@ -250,11 +280,13 @@ class UseFlag(models.Model):
 
     @property
     def num_all_hosts(self):
-        return Submission.objects.filter(global_use__name=self.name).order_by().aggregate(Count('host', distinct=True)).values()[0]
+        return Submission.objects.filter(global_use__name=self.name).order_by()\
+                .aggregate(Count('host', distinct=True)).values()[0]
 
     @property
     def num_hosts(self):
-        return Submission.objects.latest_submissions.filter(global_use__name=self.name).count()
+        return Submission.objects.latest_submissions\
+                .filter(global_use__name=self.name).count()
 
     @property
     def num_previous_hosts(self):
@@ -282,11 +314,13 @@ class Lang(models.Model):
 
     @property
     def num_all_hosts(self):
-        return Submission.objects.filter(lang__name=self.name).order_by().aggregate(Count('host', distinct=True)).values()[0]
+        return Submission.objects.filter(lang__name=self.name).order_by()\
+                .aggregate(Count('host', distinct=True)).values()[0]
 
     @property
     def num_hosts(self):
-        return Submission.objects.latest_submissions.filter(lang__name=self.name).count()
+        return Submission.objects.latest_submissions\
+                .filter(lang__name=self.name).count()
 
     @property
     def num_previous_hosts(self):
@@ -348,7 +382,8 @@ class Host(models.Model):
 
     @property
     def submission_history(self):
-        return self.submissions.order_by('datetime').values_list('id', 'datetime', 'protocol')
+        return self.submissions.order_by('datetime')\
+                .values_list('id', 'datetime', 'protocol')
 
 feature_validator = RegexValidator(r'^\S+$')
 class Feature(models.Model):
@@ -378,19 +413,23 @@ class Feature(models.Model):
 
     @property
     def num_all_hosts(self):
-        return Submission.objects.filter(features__name=self.name).order_by().aggregate(Count('host', distinct=True)).values()[0]
+        return Submission.objects.filter(features__name=self.name).order_by()\
+                .aggregate(Count('host', distinct=True)).values()[0]
 
     @property
     def num_hosts(self):
-        return Submission.objects.latest_submissions.filter(features__name=self.name).count()
+        return Submission.objects.latest_submissions\
+                .filter(features__name=self.name).count()
 
     @property
     def num_previous_hosts(self):
         return self.num_all_hosts - self.num_hosts
 
 class MirrorServer(models.Model):
-    # url = models.URLField(primary_key=True, max_length=255)
-    url = models.CharField(primary_key=True, max_length=255)
+    # id = models.AutoField(primary_key=True)
+
+    # url = models.URLField(unique=True, max_length=255)
+    url = models.CharField(unique=True, max_length=255)
 
     added_on = models.DateTimeField(auto_now_add=True)
 
@@ -399,7 +438,7 @@ class MirrorServer(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('stats:mirror_details_url', (), {'mirror': self.url})
+        return ('stats:mirror_details_url', (), {'server_id': self.id})
 
     @property
     def num_submissions(self):
@@ -407,11 +446,13 @@ class MirrorServer(models.Model):
 
     @property
     def num_all_hosts(self):
-        return Submission.objects.filter(mirrors__url=self.url).order_by().aggregate(Count('host', distinct=True)).values()[0]
+        return Submission.objects.filter(mirrors__url=self.url).order_by()\
+                .aggregate(Count('host', distinct=True)).values()[0]
 
     @property
     def num_hosts(self):
-        return Submission.objects.latest_submissions.filter(mirrors__url=self.url).count()
+        return Submission.objects.latest_submissions\
+                .filter(mirrors__url=self.url).count()
 
     @property
     def num_previous_hosts(self):
@@ -419,8 +460,10 @@ class MirrorServer(models.Model):
 
 # sync_server_validator = TODO
 class SyncServer(models.Model):
+    # id = models.AutoField(primary_key=True)
+
     # By default URLField does not like urls starting with 'rsync://'.
-    url = models.CharField(primary_key=True, max_length=255)
+    url = models.CharField(unique=True, max_length=255)
 
     added_on = models.DateTimeField(auto_now_add=True)
 
@@ -429,7 +472,7 @@ class SyncServer(models.Model):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('stats:sync_details_url', (), {'sync': self.url})
+        return ('stats:sync_details_url', (), {'server_id': self.id})
 
     @property
     def num_submissions(self):
@@ -437,11 +480,13 @@ class SyncServer(models.Model):
 
     @property
     def num_all_hosts(self):
-        return Submission.objects.filter(sync__url=self.url).order_by().aggregate(Count('host', distinct=True)).values()[0]
+        return Submission.objects.filter(sync__url=self.url).order_by()\
+                .aggregate(Count('host', distinct=True)).values()[0]
 
     @property
     def num_hosts(self):
-        return Submission.objects.latest_submissions.filter(sync__url=self.url).count()
+        return Submission.objects.latest_submissions\
+                .filter(sync__url=self.url).count()
 
     @property
     def num_previous_hosts(self):
@@ -466,11 +511,13 @@ class Keyword(models.Model):
 
     @property
     def num_all_hosts(self):
-        return Submission.objects.filter(global_keywords__name=self.name).order_by().aggregate(Count('host', distinct=True)).values()[0]
+        return Submission.objects.filter(global_keywords__name=self.name)\
+                .order_by().aggregate(Count('host', distinct=True)).values()[0]
 
     @property
     def num_hosts(self):
-        return Submission.objects.latest_submissions.filter(global_keywords__name=self.name).count()
+        return Submission.objects.latest_submissions\
+                .filter(global_keywords__name=self.name).count()
 
     @property
     def num_previous_hosts(self):
@@ -537,7 +584,9 @@ class SubmissionManager(models.Manager):
         # The following will result in the following query:
         #     SELECT MAX("stats_submission"."id") AS "latest_submission_id" FROM
         #     "stats_submission" GROUP BY "stats_submission"."host_id"
-        return Submission.objects.order_by().values('host').annotate(latest_submission_id=Max('id')).values_list('latest_submission_id', flat=True)
+        return Submission.objects.order_by().values('host')\
+                .annotate(latest_submission_id=Max('id'))\
+                .values_list('latest_submission_id', flat=True)
 
     @property
     def latest_submissions(self):

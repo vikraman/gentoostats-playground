@@ -1,5 +1,10 @@
 from .models import UseFlag
 
+def split_list(lst):
+    """Split a list into head:tail."""
+
+    return lst[0], lst[1:]
+
 def add_hyphens_to_uuid(uuid):
     """
     Try adding 4 hyphens to an UUID if its length after all existing hyphens are

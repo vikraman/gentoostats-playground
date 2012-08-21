@@ -1,3 +1,5 @@
+from __future__ import division
+
 from django import template
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
@@ -21,8 +23,29 @@ def reduce_flag(flag):
         return flag
 
 @register.filter()
+def split(lst):
+    return lst[0], lst[1:]
+
+@register.filter()
+def second(lst):
+    return lst[1]
+
+@register.filter()
+def index(lst, i):
+    return lst[i]
+
+@register.filter()
+def tail(lst):
+    """Short for |slice:'1:'"""
+    return lst[1:]
+
+@register.filter()
+def divide(a, b):
+    return round(100*a/b)
+
+@register.filter()
 def format_use_flags(installation):
-    """Prints USE flags with span information"""
+    """Prints USE flag information with <span> elements."""
 
     use    = installation.use.values_list('name', flat=True)
     iuse   = installation.iuse.values_list('name', flat=True)
@@ -55,7 +78,7 @@ def format_use_flags(installation):
                 use_class = 'use-disabled'
 
         result_list.append(
-            '<span class="%s">%s</span>' % (use_class, escape(f))
+            '<span class="use %s">%s</span>' % (use_class, escape(f))
         )
 
     return mark_safe(" ".join(result_list))

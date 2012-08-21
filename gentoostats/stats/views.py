@@ -1,14 +1,25 @@
+from __future__ import division
+
+import json
+import operator
+import datetime
+
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page, cache_control
 from django.core.urlresolvers import reverse
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils.timezone import utc
 from django.views.generic import ListView, DetailView
 from django.db.models import Q, Min, Max, Count
 from django.shortcuts import render, redirect, \
                              get_object_or_404, get_list_or_404
+from django.http import Http404
 
-from .util import add_hyphens_to_uuid
+from .util import split_list, add_hyphens_to_uuid
 from .forms import *
 from .models import *
+
+FRESH_SUBMISSION_MAX_AGE = 30 # in days
 
 class ImprovedDetailView(DetailView):
     """
@@ -43,12 +54,30 @@ def index(request):
 
 @cache_control(public=True)
 @cache_page(24 * 60 * 60)
+def faq(request):
+    """
+    F.A.Q page.
+    """
+
+    return render(request, 'stats/not_implemented.html')
+
+@cache_control(public=True)
+@cache_page(24 * 60 * 60)
 def about(request):
     """
     Project about page.
     """
 
     return render(request, 'stats/about.html')
+
+@cache_control(public=True)
+@cache_page(24 * 60 * 60)
+def stats(request):
+    """
+    Stats index page.
+    """
+
+    return render(request, 'stats/stats_index.html')
 
 @cache_control(public=True)
 @cache_page(1 * 60)
@@ -135,14 +164,19 @@ def arch_details(request, arch):
     Show more detailed statistics about a specific arch.
     """
 
-    context = dict(
-        arch            = arch,
-        num_submissions = Submission.objects.filter(arch=arch).count(),
-        num_all_hosts   = Submission.objects.filter(arch=arch).order_by().aggregate(Count('host', distinct=True)).values()[0],
-        num_hosts       = Submission.objects.latest_submissions.filter(arch=arch).count(),
-    )
+    try:
+        context = dict(
+            stats_type      = "Arch",
+            value           = arch,
+            num_submissions = Submission.objects.filter(arch=arch).count(),
+            num_all_hosts   = Submission.objects.filter(arch=arch).order_by().aggregate(Count('host', distinct=True)).values()[0],
+            num_hosts       = Submission.objects.latest_submissions.filter(arch=arch).count(),
+            added_on        = Submission.objects.filter(arch=arch).order_by("datetime")[:1].get().datetime,
+        )
+    except ObjectDoesNotExist:
+        raise Http404
 
-    return render(request, 'stats/arch_details.html', context)
+    return render(request, 'stats/generic_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
@@ -172,47 +206,43 @@ def feature_details(request, feature):
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def mirror_stats(request):
+def server_stats(request):
     """
-    Show statistics about the known mirrors.
-    """
-
-    context = dict(
-        mirrors = MirrorServer.objects.all()
-    )
-
-    return render(request, 'stats/mirror_stats.html', context)
-
-@cache_control(public=True)
-@cache_page(1 * 60)
-def mirror_details(request, mirror):
-    """
-    Show more detailed statistics about a specific mirror.
+    Show statistics about the known sync and mirror servers.
     """
 
     context = dict(
-        mirror = get_object_or_404(MirrorServer, url=mirror)
+        mirror_servers = MirrorServer.objects.all(),
+        sync_servers   = SyncServer.objects.all(),
     )
 
-    return render(request, 'stats/mirror_details.html', context)
+    return render(request, 'stats/server_stats.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def sync_stats(request):
+def mirror_details(request, server_id):
     """
-    TODO: add a description.
+    Show more detailed statistics about a specific mirror server.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    context = dict(
+        server = get_object_or_404(MirrorServer, id=server_id)
+    )
+
+    return render(request, 'stats/server_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def sync_details(request, sync):
+def sync_details(request, server_id):
     """
-    TODO: add a description.
+    Show more detailed statistics about a specific SYNC server.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    context = dict(
+        server = get_object_or_404(MirrorServer, id=server_id),
+    )
+
+    return render(request, 'stats/server_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
@@ -221,16 +251,31 @@ def repository_stats(request):
     TODO: add a description.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    context = dict(
+        repositories = Repository.objects.all(),
+    )
+
+    return render(request, 'stats/repository_stats.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def repository_details(request, repository):
+def repository_details(request, name):
     """
     TODO: add a description.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    repo = get_object_or_404(Repository, name=name)
+
+    context = dict(
+        stats_type      = "Repository",
+        value           = repo,
+        num_submissions = repo.num_submissions,
+        num_all_hosts   = repo.num_all_hosts,
+        num_hosts       = repo.num_hosts,
+        added_on        = repo.added_on,
+    )
+
+    return render(request, 'stats/generic_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
@@ -265,37 +310,206 @@ class SubmissionDetailView(ImprovedDetailView):
     queryset = Submission.objects.select_related()
     pk_url_kwarg = 'id'
 
+# TODO:
 submission_details = \
-    cache_control(private=True) (
-        cache_page(1 * 60) (
-            SubmissionDetailView.as_view()
+    login_required(login_url='/login') (
+        cache_control(private=True) (
+            cache_page(24 * 60 * 60) (
+                SubmissionDetailView.as_view()
+            )
         )
     )
 #}}}
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def useflag_stats(request):
+def use_stats(request):
     """
-    TODO: add a description.
+    Global USE flag stats.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    latest_submission_q = Q(submissions__in=Submission.objects.latest_submission_ids)
+    use_stats = UseFlag.objects.filter(latest_submission_q).annotate(num_hosts_fast=Count('submissions')).order_by('name')
+
+    context = dict(
+        use_stats = use_stats,
+    )
+
+    return render(request, 'stats/use_stats.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
-def useflag_details(request, useflag):
+def use_details(request, useflag):
     """
-    TODO: add a description.
+    Detailed USE flag stats.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    useflag = get_object_or_404(UseFlag, name=useflag)
+
+    context = dict(
+        stats_type      = "USE Flag",
+        value           = useflag,
+        num_submissions = useflag.num_submissions,
+        num_all_hosts   = useflag.num_all_hosts,
+        num_hosts       = useflag.num_hosts,
+        added_on        = useflag.added_on,
+    )
+
+    return render(request, 'stats/generic_details.html', context)
 
 @cache_control(public=True)
 @cache_page(1 * 60)
 def profile_details(request, profile):
     """
-    TODO: add a description.
+    Detailed profile stats.
     """
 
-    return render(request, 'stats/not_implemented.html')
+    try:
+        context = dict(
+            stats_type      = "Profile",
+            value           = profile,
+            num_submissions = Submission.objects.filter(profile=profile).count(),
+            num_all_hosts   = Submission.objects.filter(profile=profile).order_by().aggregate(Count('host', distinct=True)).values()[0],
+            num_hosts       = Submission.objects.latest_submissions.filter(profile=profile).count(),
+            added_on        = Submission.objects.filter(profile=profile).order_by("datetime")[:1].get().datetime,
+        )
+    except ObjectDoesNotExist:
+        raise Http404
+
+    return render(request, 'stats/generic_details.html', context)
+
+@cache_control(public=True)
+#@cache_page(10 * 60) # TODO: uncomment this in production
+@cache_page(0)
+def app_stats(request, dead=False):
+    stats = [
+        [ 'Browsers'
+        ,   ['Chrome', 'www-client/google-chrome', 'www-client/chromium']
+        ,   ['Firefox', 'www-client/firefox', 'www-client/firefox-bin']
+        ,   ['Opera', 'www-client/opera']
+        ,   ['Epiphany', 'www-client/epiphany']
+        ,   ['Konqueror', 'kde-base/konqueror']
+        ,   ['rekonq', 'www-client/rekonq']
+        ,   ['Conkeror', 'www-client/conkeror']
+        ,   ['Midori', 'www-client/midori']
+        ,   ['Uzbl', 'www-client/uzbl']
+        ],
+
+        [ 'CLI Browsers'
+        ,   ['Wget', 'net-misc/wget']
+        ,   ['cURL', 'net-misc/curl']
+        ,   ['Lynx', 'www-client/lynx']
+        ,   ['Links', 'www-client/links']
+        ,   ['ELinks', 'www-client/elinks']
+        ,   ['W3M', 'www-client/w3m', 'www-client/w3mmee']
+        ],
+
+        [ 'Editors/IDEs'
+        ,   ['Vi/Vim', 'app-editors/vim', 'app-editors/gvim', 'app-editors/nvi', 'app-editors/elvis']
+        ,   ['Emacs', 'app-editors/emacs', 'app-editors/qemacs', 'app-editors/xemacs', 'app-editors/jove']
+        ,   ['Eclipse', 'dev-util/eclipse-sdk']
+        ,   ['Yi', 'app-editors/yi']
+        ,   ['Nano', 'app-editors/nano']
+        ,   ['Gedit', 'app-editors/gedit']
+        ,   ['Kate', 'kde-base/kate']
+        ,   ['Kwrite', 'kde-base/kwrite']
+        ,   ['Ne', 'app-editors/ne']
+        ,   ['Jed', 'app-editors/jed']
+        ,   ['Jedit', 'app-editors/jedit']
+        ,   ['Joe', 'app-editors/joe']
+        ,   ['Ed', 'sys-apps/ed']
+        ,   ['Leafpad', 'app-editors/leafpad']
+        ,   ['Geany', 'dev-util/geany']
+        ],
+
+        [ 'Desktop Environments'
+        ,   ['KDE SC', 'kde-base/kdebase-meta']
+        ,   ['GNOME', 'gnome-base/gnome']
+        ,   ['Xfce', 'xfce-base/xfce4-meta']
+        ,   ['LXDE', 'lxde-base/lxde-meta']
+        #,   ['E17', 'dev-libs/ecore']
+        ],
+
+        [ 'Window Managers'
+        ,   ['Xmonad', 'x11-wm/xmonad']
+        ,   ['Ratpoison', 'x11-wm/ratpoison']
+        ,   ['Openbox', 'x11-wm/openbox']
+        ,   ['Fluxbox', 'x11-wm/fluxbox']
+        ,   ['Enlightenment', 'x11-wm/enlightenment']
+        ,   ['dwm', 'x11-wm/dwm']
+        ,   ['i3', 'x11-wm/i3']
+        ,   ['Compiz', 'x11-wm/compiz', 'x11-wm/compiz-fusion']
+        ,   ['FVWM', 'x11-wm/fvwm']
+        ,   ['Wmii', 'x11-wm/wmii']
+        ,   ['Window Maker', 'x11-wm/windowmaker']
+        ,   ['subtle', 'x11-wm/subtle']
+        ,   ['awesome', 'x11-wm/awesome']
+        ,   ['evilwm', 'x11-wm/evilwm']
+        ,   ['IceWM', 'x11-wm/icewm']
+        ],
+
+        [ 'Shells'
+        ,   ['Bash', 'app-shells/bash']
+        ,   ['Zsh', 'app-shells/zsh']
+        ,   ['Tcsh', 'app-shells/tcsh']
+        ,   ['fish', 'app-shells/fish']
+        ],
+
+        [ 'Web servers'
+        ,   ['Apache', 'www-servers/apache']
+        ,   ['Nginx', 'www-servers/nginx']
+        ,   ['lighttpd', 'www-servers/lighttpd']
+        ],
+
+        [ 'Graphics Drivers'
+        ,   ['Nvidia (proprietary)', 'x11-drivers/nvidia-drivers']
+        ,   ['Nouveau', 'x11-drivers/xf86-video-nouveau']
+        ,   ['fglrx (proprietary)', 'x11-drivers/ati-drivers']
+        ,   ['radeon', 'x11-drivers/xf86-video-ati']
+        ,   ['Intel', 'x11-drivers/xf86-video-intel']
+        ],
+    ]
+
+    delta = datetime.timedelta(days=FRESH_SUBMISSION_MAX_AGE)
+    submission_age = datetime.datetime.utcnow().replace(tzinfo=utc) - delta
+
+    fresh_submissions_qs = Submission.objects.latest_submissions.filter(datetime__gte=submission_age)
+    num_hosts = fresh_submissions_qs.count()
+
+    def percentify(n):
+        # TODO: uncomment this in production.
+        # return round(100 * n / num_hosts)
+
+        import random
+        return random.randint(0, 100)
+
+    for section in stats:
+        cat, apps = split_list(section)
+        for app in apps:
+            # Turn this: ['Vi/Vim', 'app-editors/vim', 'app-editors/gvim', ...]
+            # into this: [('Vi/Vim', nT), ('app-editors/vim', n1), ('app-editors/gvim', n2), ...]
+            # 'nT' is the total percentage of hosts with this app, calculated by
+            # chaining Q objects. n1, n2, etc. are also percentages.
+
+            q_list = []
+            name, pkgs = split_list(app)
+
+            for index, pkg in enumerate(pkgs):
+                q_list.append(Q(installations__package__cp=pkg))
+
+                num = fresh_submissions_qs.filter(installations__package__cp=pkg).count()
+                app[index+1] = (pkg, percentify(num))
+
+            num_total = fresh_submissions_qs.filter(reduce(operator.or_, q_list)).distinct().count()
+            app[0] = (name, percentify(num_total))
+
+        # sort 'apps' by each app's usage percentage:
+        section[1:] = sorted(apps, key=lambda x: x[0][1], reverse=True)
+
+    context = dict(
+        num_hosts = num_hosts,
+        dead      = dead,
+        stats     = json.dumps(stats),
+    )
+
+    return render(request, 'stats/app_stats.html', context)

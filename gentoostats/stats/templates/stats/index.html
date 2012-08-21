@@ -1,17 +1,83 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Home | Gentoostats{% endblock title %}
 
 {% block content %}
-    <h1>Available Statistics:</h1>
+    {% h1 "About Gentoostats" %}
+    <p>The Gentoostats project aims to gather statistics about the installed
+    packages on Gentoo systems in order to provide useful information to both
+    users and developers.</p>
+    {% h2 "Why contribute?" %}
     <ul>
-        <li><a href="{% url 'stats:overall_stats_url' %}">Overall stats</a></li>
-        <li><a href="{% url 'stats:host_search_url' %}">Host search</a></li>
-        <li><a href="{% url 'stats:useflag_stats_url' %}">USE stats</a></li>
-        <li><a href="{% url 'stats:repository_stats_url' %}">Repository stats</a></li>
-        <li><a href="{% url 'stats:category_stats_url' %}">Category stats</a></li>
-        <li><a href="{% url 'stats:mirror_stats_url' %}">Mirror stats</a></li>
-        <li><a href="{% url 'stats:sync_stats_url' %}">Sync stats</a></li>
+    <li>Help developers see which packages and overlays are important</li>
+    <li>Help developers choose when to stabilise a package</li>
+    <li>Create a snapshot of your system (your world file + package USE flags)</li>
+    <li>Help us settle down <a href="/stats/apps/#editors-ides">some serious issues</a></li>
     </ul>
+    {% h2 "How to contribute?" %}
+    <p>Contribution is easy -- just download the client, configure it, and
+    submit your stats.</p>
+    {% h2 "Installation" %}
+    <p>The following dependencies are required:</p>
+    <ul>
+        <li>Python 2.7+, including Python 3+ (emerge -av '>=dev-lang/python-2.7')</li>
+        <li>Portage (emerge -av 'sys-apps/portage')</li>
+        <li>Gentoolkit (emerge -av 'app-portage/gentoolkit')</li>
+    </ul>
+    <p>Make sure that you have the above dependencies installad. Then clone the
+    client repository:</p>
+    <p class="code">git clone https://github.com/gg7/gentoostats.git</p>
+    <p>Place the directory wherever you want, but remember to add the 'pym'
+    subdirectory directory to your $PYTHONPATH. For example,</p>
+    <p class="code">export PYTHONPATH="~/gentoostats/pym"</p>
+    <p>Now, onto configuration:</p>
+    <p class="code">gentoostats/bin/gentoostats configure</p>
+    <p>You will be asked a couple of questions and the following two files will
+    be generated:</p>
+    <ul>
+        <li>/etc/gentoostats/auth.cfg</li>
+        <li>/etc/gentoostats/payload.cfg</li>
+    </ul>
+    <p>Finally, run</p>
+    <p class="code">gentoostats submit</p>
+    {% h2 "What will be reported?" %}
+    <p>You will be asked exactly what to report when you configure Gentoostats.
+    Here's what <i>can</i> be reported:</p>
+    <ul>
+    <li>Make.conf variables:</li>
+        <ul>
+        <li>ACCEPT_KEYWORDS</li>
+        <li>ACCEPT_LICENSE</li>
+        <li>ARCH</li>
+        <li>CFLAGS</li>
+        <li>CHOST</li>
+        <li>CTARGET</li>
+        <li>CXXFLAGS</li>
+        <li>EMERGE_DEFAULT_OPTS</li>
+        <li>FEATURES</li>
+        <li>FFLAGS</li>
+        <li>GENTOO_MIRRORS</li>
+        <li>LDFLAGS</li>
+        <li>MAKEOPTS</li>
+        <li>PORTAGE_RSYNC_EXTRA_OPTS</li>
+        <li>SYNC (rsync server)</li>
+        </ul>
+    <li>System USE flags (USE)</li>
+    <li>Installed Packages</li>
+        <ul>
+        <li>Package build time</li>
+        <li>Package keyword</li>
+        <li>Package repository (e.g. "gentoo")</li>
+        <li>Package size</li>
+        <li>Package USE flags (USE, IUSE, PKGUSE)</li>
+        </ul>
+    <li>Selected Packages (your @world set, plus all selected sets)</li>
+    <li>Time of last Portage tree synchronisation (LASTSYNC)</li>
+    <li>LANG</li>
+    <li>PLATFORM (e.g. 'Linux-3.2.1-gentoo-r2-x86_64-Intel-R-_Core-TM-_i3_CPU_M_330_@_2.13GHz-with-gentoo-2.0.3')</li>
+    <li>PROFILE (e.g. 'default/linux/amd64/10.0/desktop')</li>
+    </ul>
+    {% h2 "NOTE: As of 20 Aug 2012, the server is yet to be deployed." %}
 {% endblock content %}

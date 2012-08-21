@@ -1,0 +1,223 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+ul {
+    padding-left: 1.6em;
+}
+
+#content ul {
+    margin-top: 0.75em;
+    margin-bottom: 0.75em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    clear: both;
+    padding-bottom: 0px;
+    margin-top: 0.75em;
+    margin-bottom: 0.5em;
+}
+
+h1 {
+    margin-top: 0.5em;
+    /* text-align: center; */
+    /* margin-bottom: 0.0em; */
+}
+
+a.header {
+    border-bottom: 1px dotted #999;
+}
+
+h1 {
+    font-size: 1.6em;
+}
+
+h2 {
+    font-size: 1.3em;
+}
+
+p {
+    margin: 2px;
+}
+
+p.code {
+    margin-left: 20px;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    font-family: monospace;
+    font-size: 1.15em;
+}
+
+input[type='submit'] {
+    margin-top: 10px;
+    font-size: 1.2em;
+}
+
+body {
+    min-width: 800px;
+    background-color: #F8FBFD;
+    color: #222;
+    font-family: Helvetica, Verdana, Arial, sans-serif;
+    font-size: 100%;
+    /* letter-spacing: 1px; */
+}
+
+a {
+    text-decoration: none;
+}
+
+a[href]:link {
+    color: #0000FF;
+}
+
+a[href]:visited {
+    color: #52188C;
+}
+
+/* focus is added for keyboard support */
+a[href]:hover, a[href]:focus, a[href]:active {
+    color: #7A5ADA;
+    text-decoration: underline;
+}
+
+#header {
+    height: 50px;
+    padding: 10px 15px;
+    background-color: #5C429F;
+}
+
+#logo {
+    display: inline-block;
+    height: 50px !important;
+    width: 50px !important;
+    background: url('../logo.png') no-repeat;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+ul#nav {
+    padding-left: 15px;
+    display: inline-table;
+    height: 100%;
+}
+
+ul#nav li {
+    display: table-cell;
+    height: 100%;
+    vertical-align: middle;
+    color: #FFF !important;
+    font-size: 1.2em;
+    padding: 10px 0px 10px 0px;
+}
+
+span.sep {
+    margin: 0px 10px 0px 10px;
+    color: #AAA;
+    font-size: 1.1em;
+}
+
+ul#nav li a {
+    -o-transition: all 300ms;
+    -moz-transition: all 300ms;
+    -webkit-transition: all 300ms;
+    transition: all 300ms;
+}
+
+#nav a:link, #nav a:visited {
+    color: #EEE !important;
+}
+
+#nav a.current {
+    color: #FFF !important;
+    font-weight: bold;
+    /* border-bottom: 1px solid #F90; */
+}
+
+#nav a:hover, #nav a:focus, #nav a:active {
+    color: #FFF !important;
+    text-shadow: 0 0 2px #FFF;
+    text-decoration: none !important;
+}
+
+#content {
+    margin-top: 16px;
+    margin-bottom: 16px;
+    margin-left: 15px;
+    margin-right: 16px;
+    /* padding-top: 15px; */
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: 11px;
+    background: #ECF2F5;
+    border: 1px solid #BCD;
+    -webkit-box-shadow: 0px 2px 5px -2px rgba(0, 0, 50, 0.5);
+    -moz-box-shadow:    0px 2px 5px -2px rgba(0, 0, 50, 0.5);
+    box-shadow:         0px 2px 5px -2px rgba(0, 0, 50, 0.5);
+}
+
+#footer {
+    text-align: center;
+    /* webkit-radial-gradient(0% 100%, circle cover, rgba(0, 0, 0, 0.078), transparent 80px, transparent 100%); */
+}
+
+th {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+td:first-child {
+    min-width: 400px;
+}
+
+svg.stats {
+    display: block;
+    padding-bottom: 18px;
+}
+
+.use-selected { color: green; }
+.use-invalid { color: orange; }
+.use-enabled { color: darkgreen; }
+.use-unselected { color: red; }
+.use-disabled { color: gray; }
+
+.use-selected:hover:after { content: "USE flag has been explicitly enabled."; }
+.use-invalid:hover:after { content: "USE flag has been selected, but not actually used by the installed package."; }
+.use-enabled:hover:after { content: "USE flag has been inexclicitly enabled."; }
+.use-unselected:hover:after { content: "USE flag has been explicitly disabled."; }
+.use-disabled:hover:after { content: "USE flag has not been enabled."; }
+
+.use {
+    position: relative;
+    cursor: help;
+}
+
+.use:hover {
+    border-bottom: 1px dotted #000;
+}
+
+/* use flag hover tooltips */
+.use:hover:after {
+    position: absolute;
+    display: block;
+    z-index: 999;
+    left: 0em;
+    top: 1.7em;
+    width: auto;
+    text-indent: 0;
+    white-space: nowrap;
+    color: #F0F0F0;
+    opacity: 1.0;
+    background-color: #000000;
+    border: 1px solid #7F7F7F;
+    text-align: center;
+    font-size: 0.9em;
+    font-weight: normal;
+    padding: 5px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius:    4px;
+    border-radius:         4px;
+    -webkit-box-shadow: 2px 2px 0px 0.5px rgba(0, 0, 50, 0.3);
+    -moz-box-shadow:    2px 2px 0px 0.5px rgba(0, 0, 50, 0.3);
+    box-shadow:         2px 2px 0px 0.5px rgba(0, 0, 50, 0.3);
+}

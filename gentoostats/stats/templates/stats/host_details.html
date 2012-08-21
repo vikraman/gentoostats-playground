@@ -1,10 +1,13 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
+{% load general %}
 
 {% block title %}Detailed Host Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>Detailed Host Statistics For '{{ host.id }}'</h1>
+    {% with this_sucks="Detailed Host Statistics for '"|append:host.id|append:"'" %}
+        {% h1 this_sucks %}
+    {% endwith %}
 
     {% with latest_submission=host.latest_submission %}
         {% if latest_submission %}

@@ -1,11 +1,15 @@
 {% extends "stats/base.html" %}
 {% load url from future %}
 {% load package_helpers %}
+{% load general %}
 
 {% block title %}Detailed Submission Statistics | Gentoostats {% endblock title %}
 
 {% block content %}
-    <h1>Detailed Submission Statistics for submission #{{ submission.id }}</h1>
+    {% with this_sucks="Detailed Submission Statistics for submission #"|append:submission.id %}
+        {% h1 this_sucks %}
+    {% endwith %}
+
     {% include 'stats/submission_simple.html' with submission=submission %}
 
     <li>Installed packages:</li>

@@ -1,0 +1,18 @@
+{% extends "stats/base.html" %}
+{% load url from future %}
+{% load general %}
+
+{% block title %}Detailed {{ stats_type }} Statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    {% with this_sucks="Detailed "|append:stats_type|append:" Statistics for '"|append:value|append:"'" %}
+        {% h1 this_sucks %}
+    {% endwith %}
+
+    <ul>
+    <li>Present in {{ num_submissions|default:"?" }} submission{{ num_submissions|default:2|pluralize }}.</li>
+    <li>Currently used by {{ num_hosts|default:"?" }} host{{ num_hosts|default:2|pluralize }}.</li>
+    <li>Has been used by {{ num_all_hosts|default:"?" }} host{{ num_all_hosts|default:2|pluralize }}.</li>
+    <li>First appeared in DB on {{ added_on|default:"?" }}.</li>
+    </ul>
+{% endblock content %}

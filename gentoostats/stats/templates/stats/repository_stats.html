@@ -1,0 +1,22 @@
+{% extends "stats/base.html" %}
+{% load url from future %}
+{% load general %}
+
+{% block title %}Repository Statistics | Gentoostats {% endblock title %}
+
+{% block content %}
+    {% h1 "Repository Statistics" %}
+
+    <table border="1">
+        <th>Repository</th>
+        <th>Hosts</th>
+        <th>Packages</th>
+        {% for repository in repositories %}
+            <tr>
+                <td><a href="{{ repository.get_absolute_url }}">{{ repository }}</a></td>
+                <td>{{ repository.num_hosts|default:"?" }}</td>
+                <td>{{ repository.num_packages|default:"?" }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock content %}
